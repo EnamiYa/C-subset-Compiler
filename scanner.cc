@@ -19,9 +19,6 @@
  */
 
 
-// ! added
-Token::Token(): kind{}, lexeme{""} {}
-
 Token::Token(Token::Kind kind, std::string lexeme):
   kind(kind), lexeme(std::move(lexeme)) {}
 

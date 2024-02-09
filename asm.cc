@@ -3,9 +3,11 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include <cstdint>
+#include "instructions.h"
 #include "scanner.h"
 #include "helpers.h"
-#include "instruction.h"
+// #include "instruction.h"
 
 using namespace std;
 
@@ -15,11 +17,24 @@ using namespace std;
  * This file contains the main function of your program. By default, it just
  * prints the scanned list of tokens back to standard output.
  */
+
+bool testP1 = false;
+bool testP2 = 1;
+bool testP3 = false;
+bool testP4 = false;
+bool testP5 = false;
+bool outputTokens = false;
+bool getST = false;
+
+// 1, parse: group tokens (convert to INS) + error checking
+// 2, build symbolTable + dup check
+// 3, eliminate labels
+// 4, spit out bin
 int main()
 {
   std::string line;
   unordered_map<string, int> symbolTable;
-  vector<unique_ptr<Instruction>> instructions; // TODO
+  // vector<unique_ptr<Inst>> instructions; // TODO
   int pc = 1; //? is one INS ahead
 
   try
@@ -27,47 +42,80 @@ int main()
     while (getline(std::cin, line))
     {
       std::vector<Token> tokenLine = scan(line);
-      // 1. check INS valid - isValidToken
-      // if invalid return
 
-      // Valid Tokens
-      //* 1st pass - sym table
-      int len = tokenLine.size();
-      for (int i = 0; i < len; ++i)
+      if (testP1)
       {
-        Token token = tokenLine[i];
-        Token::Kind kind = tokenLine[i].getKind();
-        // Cases: Label - WORD - INS
-
-        if (kind == Token::Kind::ID)
+        for (int i = 0; i < tokenLine.size(); ++i)
         {
-          // check it's an INS ID, not a label use...
-          pc += INS.find(token.getLexeme()) != INS.end() ? 1 : 0;
-        }
-
-        else if (kind == Token::Kind::WORD)
-        {
-          outWord(token.toNumber());
-          ++pc;
-        }
-
-        else if (kind == Token::Kind::LABEL)
-        {
-          auto it = symbolTable.find(token.getLexeme());
-          if (it != symbolTable.end())
+          if (tokenLine[i].getKind() == Token::Kind::WORD)
           {
-            symbolTable[token.getLexeme()] = pc;
+            outWord(tokenLine[i + 1].toNumber());
           }
         }
       }
 
-      for (auto &token : tokenLine)
+      if (testP2)
       {
-        std::cout << token << ' ';
+        for (int i = 0; i < tokenLine.size(); ++i)
+        {
+          Inst *ins = 0;
+          if (tokenLine[i].getKind() == Token::Kind::ID && tokenLine[i].getLexeme() == "add")
+          {
+            ins = new Add{Reg{static_cast<int32_t>(tokenLine[i + 1].toNumber())}, Reg{static_cast<int32_t>(tokenLine[i + 2].toNumber())}, Reg{static_cast<int32_t>(tokenLine[i + 3].toNumber())}};
+                      ins->toBin();
+          delete ins;
+          }
+          else if (tokenLine[i].getKind() == Token::Kind::ID && tokenLine[i].getLexeme() == "beq")
+          {
+            ins = new Beq{Reg{static_cast<int>(tokenLine[i + 1].toNumber())}, Reg{static_cast<int>(tokenLine[i + 2].toNumber())}, static_cast<int>(tokenLine[i + 3].toNumber())};
+                    ins->toBin();
+          delete ins;
+          }
+        }
       }
-      //! TO REMOVE - Printing a random newline character as part of your machine code
-      // output will cause you to fail the Marmoset tests.
-      std::cout << std::endl;
+
+      // Valid Tokens
+      if (getST)
+      {
+        //* 1st pass - sym table
+        int len = tokenLine.size();
+        for (int i = 0; i < len; ++i)
+        {
+          Token token = tokenLine[i];
+          Token::Kind kind = tokenLine[i].getKind();
+          // Cases: Label - WORD - INS
+
+          if (kind == Token::Kind::ID)
+          {
+            // check it's an INS ID, not a label use...
+            pc += INS.find(token.getLexeme()) != INS.end() ? 1 : 0;
+          }
+
+          else if (kind == Token::Kind::WORD)
+          {
+            outWord(token.toNumber());
+            ++pc;
+          }
+
+          else if (kind == Token::Kind::LABEL)
+          {
+            auto it = symbolTable.find(token.getLexeme());
+            if (it != symbolTable.end())
+            {
+              symbolTable[token.getLexeme()] = pc;
+            }
+          }
+        }
+      }
+
+      if (outputTokens)
+      {
+        for (auto &token : tokenLine)
+        {
+          std::cout << token << ' ';
+        }
+        std::cout << std::endl;
+      }
     }
   }
   catch (ScanningFailure &f)
@@ -76,9 +124,6 @@ int main()
     return 1;
   }
   // You can add your own catch clause(s) for other kinds of errors.
-  // Throwing exceptions and catching them is the recommended way to
-  // handle errors and terminate the program cleanly in C++. Do not
-  // use the std::exit function, which may leak memory.
 
   return 0;
 }

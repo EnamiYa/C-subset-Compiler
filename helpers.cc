@@ -6,18 +6,14 @@
 
 using namespace std;
 
-const int eightBitMask = 0xff;
+const int _8BitMask = 0xff;
 
-// p1
-void outWord(const int64_t& word) {
+void outWord(const int64_t &word)
+{
     char c;
     // 32 - 8
-    for (int i = 32 - 8; i <= 0; i -= 8) {
-        c = (word >> i) && eightBitMask;
+    for (int i = 32 - 8; i >= 0; i -= 8) {
+        c = (word >> i) & _8BitMask;
         cout << c;
     }
 }
-
-
-
-

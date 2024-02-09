@@ -1,2 +1,4 @@
 **/.vscode
 **/asm_cpp
+**/old_approach
+*.zip

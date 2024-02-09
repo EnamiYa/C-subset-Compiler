@@ -64,7 +64,6 @@ class Token {
     std::string lexeme;
 
   public:
-    Token(); // ! added
     Token(Kind kind, std::string lexeme);
 
     Kind getKind() const;
