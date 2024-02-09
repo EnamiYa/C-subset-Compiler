@@ -23,7 +23,7 @@ bool testP2 = 1;
 bool testP3 = false;
 bool testP4 = false;
 bool testP5 = false;
-bool outputTokens = false;
+bool outputTokens = 0;
 bool getST = false;
 
 // 1, parse: group tokens (convert to INS) + error checking
@@ -42,10 +42,11 @@ int main()
     while (getline(std::cin, line))
     {
       std::vector<Token> tokenLine = scan(line);
+      int len = tokenLine.size();
 
       if (testP1)
       {
-        for (int i = 0; i < tokenLine.size(); ++i)
+        for (int i = 0; i < len; ++i)
         {
           if (tokenLine[i].getKind() == Token::Kind::WORD)
           {
@@ -56,20 +57,19 @@ int main()
 
       if (testP2)
       {
-        for (int i = 0; i < tokenLine.size(); ++i)
+        for (int i = 0; i < len; ++i)
         {
-          Inst *ins = 0;
           if (tokenLine[i].getKind() == Token::Kind::ID && tokenLine[i].getLexeme() == "add")
           {
-            ins = new Add{Reg{static_cast<int32_t>(tokenLine[i + 1].toNumber())}, Reg{static_cast<int32_t>(tokenLine[i + 2].toNumber())}, Reg{static_cast<int32_t>(tokenLine[i + 3].toNumber())}};
-                      ins->toBin();
-          delete ins;
+            Inst *ins = new Add{tokenLine[i + 1].toNumber(), tokenLine[i + 3].toNumber(), tokenLine[i + 5].toNumber()};
+            ins->toBin();
+            delete ins;
           }
           else if (tokenLine[i].getKind() == Token::Kind::ID && tokenLine[i].getLexeme() == "beq")
           {
-            ins = new Beq{Reg{static_cast<int>(tokenLine[i + 1].toNumber())}, Reg{static_cast<int>(tokenLine[i + 2].toNumber())}, static_cast<int>(tokenLine[i + 3].toNumber())};
-                    ins->toBin();
-          delete ins;
+            Inst *ins = new Beq{tokenLine[i + 1].toNumber(), tokenLine[i + 3].toNumber(), tokenLine[i + 5].toNumber()};
+            ins->toBin();
+            delete ins;
           }
         }
       }

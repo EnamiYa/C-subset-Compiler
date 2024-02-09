@@ -20,10 +20,16 @@ struct Word: public Inst {
 };
 
 struct Add: public Inst {
-    Reg d, s, t;
-    Add(Reg d, Reg s, Reg t): d{d}, s{s}, t{t} {}
+    int64_t d, s, t;
+    Add(int64_t d, int64_t s, int64_t t): d{d}, s{s}, t{t} {}
      void toBin() override;
 };
+
+// struct Add: public Inst {
+//     Reg d, s, t;
+//     Add(Reg d, Reg s, Reg t): d{d}, s{s}, t{t} {}
+//      void toBin() override;
+// };
 
 struct Mult: public Inst {
     Reg s, t;
@@ -72,15 +78,15 @@ struct Sltu: public Inst {
 };
 
 struct Beq: public Inst {
-    Reg s, t;
-    int offset;
+    int64_t s, t;
+    int64_t i;
     void toBin() override;
-    Beq(Reg s, Reg t, int offset): s{s}, t{t}, offset{offset} {}
+    Beq(int64_t s, int64_t t, int64_t i): s{s}, t{t}, i{i} {}
 };
 
 struct Bne: public Inst {
     Reg t, s;
-    int offset;
+    int i;
 };
 
 

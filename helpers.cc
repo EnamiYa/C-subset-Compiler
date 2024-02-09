@@ -8,7 +8,7 @@ using namespace std;
 
 const int _8BitMask = 0xff;
 
-void outWord(const int64_t &word)
+void outWord(const int &word)
 {
     char c;
     // 32 - 8
@@ -17,3 +17,4 @@ void outWord(const int64_t &word)
         cout << c;
     }
 }
+
