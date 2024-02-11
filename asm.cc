@@ -17,14 +17,14 @@ using namespace std;
  * This file contains the main function of your program. By default, it just
  * prints the scanned list of tokens back to standard output.
  */
-
-bool testP1 = false;
+bool labelSubTest = 0;
+bool testP1 = 0;
 bool testP2 = 0;
-bool testP3 = false;
-bool testP4 = false;
-bool testP5 = false;
+bool testP3 = 0;
+bool testP4 = 0;
+bool testP5 = 0;
 bool outputTokens = 0;
-bool getST = 1;
+bool getST = 1; // always true
 
 // 1, parse: group tokens (convert to INS) + error checking
 // 2, build symbolTable + dup check - DONE
@@ -153,7 +153,7 @@ int main()
   // You can add your own catch clause(s) for other kinds of errors.
 
   //* 2nd pass - eliminate labels
-  int spc = 0;
+  int spc = 1;
   // for(auto [k, v] : symbolTable) {
   //   cout << "k= "<<k << " v= " << v << '\n';
   // }
@@ -163,7 +163,6 @@ int main()
     {
       if (p->label != "")
       {
-        // cout << "p->label= " << p->label << '\n';
         if (!symbolTable.count(p->label))
         {
           cerr << "ERROR: label not defined" << endl;
@@ -173,6 +172,10 @@ int main()
         { // defined
           // eliminate label
           p->i = symbolTable[p->label];
+          if (labelSubTest)
+          {
+            cout << ".word label value address is: " << p->i << '\n';
+          }
         }
       }
     }
@@ -189,6 +192,10 @@ int main()
         { // defined
           // eliminate label
           p->i = (symbolTable[p->label] / 4) - spc;
+          if (labelSubTest)
+          {
+            cout << "Beq i label value is the offset: " << p->i << '\n';
+          }
         }
       }
     }
@@ -198,13 +205,17 @@ int main()
       {
         if (!symbolTable.count(p->label))
         {
-          cerr << "ERROR: label not defined" << endl;
+          // cerr << "ERROR: label not defined" << endl;
           return 1;
         }
         else
         { // defined
           // eliminate label
           p->i = (symbolTable[p->label] / 4) - spc;
+          if (labelSubTest)
+          {
+            cout << "Bne i label value is the offset: " << p->i << '\n';
+          }
         }
       }
     }

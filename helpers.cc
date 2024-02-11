@@ -199,8 +199,7 @@ bool isValidInsFormat(const vector<Token> &tokenLine)
     }
     else
     {
-        assert(false && "Unknown instruction: THIS MUST NOT BE EXECUTING");
-        // std::cout << "Unknown instruction: THIS MUST NOT BE EXECUTING" << tokenStr << std::endl;
+        assert(false && "ERROR: Unknown instruction - THIS MUST NOT BE EXECUTING");
         return false;
     }
 
@@ -313,7 +312,7 @@ unique_ptr<Inst> createIns(const vector<Token> &tokens)
     }
     else
     {
-        cout << "THIS SHOULD NOT PRINT" << endl;
+        assert(false);
     }
 
     return ins;
