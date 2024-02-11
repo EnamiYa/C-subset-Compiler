@@ -19,12 +19,12 @@ using namespace std;
  */
 
 bool testP1 = false;
-bool testP2 = 1;
+bool testP2 = 0;
 bool testP3 = false;
 bool testP4 = false;
 bool testP5 = false;
 bool outputTokens = 0;
-bool getST = false;
+bool getST = 1;
 
 // 1, parse: group tokens (convert to INS) + error checking
 // 2, build symbolTable + dup check - DONE
@@ -34,8 +34,8 @@ int main()
 {
   std::string line;
   unordered_map<string, int> symbolTable; //* label to addr in bytes
-  // vector<unique_ptr<Inst>> instructions; // TODO
-  int pc = 0; //* in bytes
+  vector<unique_ptr<Inst>> insVec;        // TODO
+  int pc = 0;                             //* in bytes
 
   try
   {
@@ -53,52 +53,48 @@ int main()
           Token::Kind kind = token.getKind();
           string tokenStr = token.getLexeme();
 
-          if (kind == Token::Kind::ID)
+          if (kind == Token::Kind::WORD || kind == Token::Kind::ID)
           {
             pc++; // ? INCREMENT PC
             // is valid INS name
             if (INS.count(tokenStr) == 0)
             {
-              cout << "ERROR: invalid Instruction" << endl;
+              cerr << "ERROR: invalid Instruction" << endl;
               return 1;
             }
 
             if (isValidInsFormat(vector<Token>(tokenLine.begin() + i, tokenLine.end())))
             {
-              
-              // todo: construct INS + push to vector<Inst>
+              insVec.emplace_back(createIns(vector<Token>(tokenLine.begin() + i, tokenLine.end()))); //! double check
               break;
             }
             else
-            { 
-              cout << "ERROR: invalid Instruction format";
+            {
+              cerr << "ERROR: invalid Instruction format";
               return 1;
             }
             // pc += INS.find(token.getLexeme()) != INS.end() ? 1 : 0;
           }
-
           else if (kind == Token::Kind::LABEL)
           {
             // label def does not exist
             if (symbolTable.find(tokenStr) == symbolTable.end())
             {
-              symbolTable[tokenStr] = pc * 4;
+              symbolTable[tokenStr.substr(0, tokenStr.size() - 1)] = pc * 4;
               continue;
             }
             else
             {
-              cout << "ERROR: Duplicate definition of label" << tokenStr << endl;
+              cerr << "ERROR: Duplicate definition of label" << tokenStr << endl;
               return -1;
             }
           }
           else
           { // ERROR
-          cout << "ERROR: Invalid value read - must be INS or Label" << endl;
+            cerr << "ERROR: Invalid value read - must be INS or Label" << endl;
           }
         }
       }
-
-      //* 2nd pass - eliminate labels
 
       if (testP1)
       {
@@ -123,9 +119,18 @@ int main()
           }
           else if (tokenLine[i].getKind() == Token::Kind::ID && tokenLine[i].getLexeme() == "beq")
           {
-            Inst *ins = new Beq{tokenLine[i + 1].toNumber(), tokenLine[i + 3].toNumber(), tokenLine[i + 5].toNumber()};
-            ins->toBin();
-            delete ins;
+            if (tokenLine[i + 5].getKind() == Token::ID)
+            {
+              Inst *ins = new Beq{tokenLine[i + 1].toNumber(), tokenLine[i + 3].toNumber(), tokenLine[i + 5].getLexeme()};
+              ins->toBin();
+              delete ins;
+            }
+            else
+            {
+              Inst *ins = new Beq{tokenLine[i + 1].toNumber(), tokenLine[i + 3].toNumber(), tokenLine[i + 5].toNumber()};
+              ins->toBin();
+              delete ins;
+            }
           }
         }
       }
@@ -147,5 +152,64 @@ int main()
   }
   // You can add your own catch clause(s) for other kinds of errors.
 
+  //* 2nd pass - eliminate labels
+  int spc = 0;
+  // for(auto [k, v] : symbolTable) {
+  //   cout << "k= "<<k << " v= " << v << '\n';
+  // }
+  for (const auto &ins : insVec)
+  {
+    if (auto *p = dynamic_cast<Word *>(ins.get()))
+    {
+      if (p->label != "")
+      {
+        // cout << "p->label= " << p->label << '\n';
+        if (!symbolTable.count(p->label))
+        {
+          cerr << "ERROR: label not defined" << endl;
+          return 1;
+        }
+        else
+        { // defined
+          // eliminate label
+          p->i = symbolTable[p->label];
+        }
+      }
+    }
+    else if (auto *p = dynamic_cast<Beq *>(ins.get()))
+    {
+      if (p->label != "")
+      {
+        if (!symbolTable.count(p->label))
+        {
+          cerr << "ERROR: label not defined" << endl;
+          return 1;
+        }
+        else
+        { // defined
+          // eliminate label
+          p->i = (symbolTable[p->label] / 4) - spc;
+        }
+      }
+    }
+    else if (auto *p = dynamic_cast<Bne *>(ins.get()))
+    {
+      if (p->label != "")
+      {
+        if (!symbolTable.count(p->label))
+        {
+          cerr << "ERROR: label not defined" << endl;
+          return 1;
+        }
+        else
+        { // defined
+          // eliminate label
+          p->i = (symbolTable[p->label] / 4) - spc;
+        }
+      }
+    }
+    ins->toBin();
+    ++spc;
+  }
   return 0;
 }

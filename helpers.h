@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "scanner.h"
+#include "instructions.h"
 
 using namespace std;
 
@@ -13,4 +14,8 @@ void outWord(const int &word);
 //! REMOVE
 unordered_map<string, int> getSymbolTable(const vector<Token> &v);
 
-bool isValidInsFormat(const vector<Token>& tokenLine);
+bool isValidInsFormat(const vector<Token> &tokenLine);
+
+// auto createIns(vector<Token>& tokens);
+// todo fix after adding other INS ctors
+unique_ptr<Inst> createIns(const vector<Token> &tokens);

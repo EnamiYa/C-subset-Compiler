@@ -47,7 +47,7 @@ class Token {
   public:
     enum Kind {
       ID = 0,
-      LABEL,
+      LABEL, /*1*/
       WORD,
       COMMA,
       LPAREN,

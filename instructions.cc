@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 #include "helpers.h"
 #include "instructions.h"
 
@@ -20,4 +21,9 @@ void Beq::toBin()
 
     int instr = (opcode << 26) | ((s << 21) & _32BitMask) | ((t << 16) & _32BitMask) | ((i & _32BitMask) & _16BitMask); // add $3, $2, $4
     outWord(instr);
+}
+
+void Word::toBin() {
+    int inst = _32BitMask & i;
+    outWord(inst);
 }

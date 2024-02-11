@@ -5,6 +5,7 @@
 #include <utility>
 #include <set>
 #include <array>
+#include <cassert>
 #include "scanner.h"
 
 /*
@@ -57,6 +58,7 @@ int64_t Token::toNumber() const {
   } else if (kind == REG) {
     iss.str(lexeme.substr(1));
   } else {
+    assert(false); //* added
     // This should never happen if the user calls this function correctly
     return 0;
   }

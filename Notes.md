@@ -4,8 +4,9 @@
 - lis implementation
 
 # TODO
-- Parse: group INS together -> push to vector<Instruction>
-- ADD .WORD as INS - can have asm all written in .word
+- range checking in isValindIns
+- toBin()
+- pass 2
 
 - Pass1: 
     - seperate INS + Symbol Table (dup defs check)
