@@ -35,7 +35,7 @@ int main()
   std::string line;
   unordered_map<string, int> symbolTable;
   // vector<unique_ptr<Inst>> instructions; // TODO
-  int pc = 1; //? is one INS ahead
+  int pc = 0; //? may be problematic
 
   try
   {
@@ -43,6 +43,58 @@ int main()
     {
       std::vector<Token> tokenLine = scan(line);
       int len = tokenLine.size();
+
+      if (getST)
+      {
+        //* 1st pass - sym table
+        for (int i = 0; i < len; ++i)
+        {
+          Token token = tokenLine[i]; // first read
+          Token::Kind kind = token.getKind();
+          string tokenStr = token.getLexeme();
+
+          if (kind == Token::Kind::ID)
+          {
+            // is valid INS name
+            if (INS.count(tokenStr) == 0)
+            {
+              cout << "ERROR: invalid Instruction" << endl;
+              return 1;
+            }
+
+            if (isValidInsFormat(vector<Token>(tokenLine.begin() + i, tokenLine.end())))
+            {
+              // todo: construct INS + push to vector<Inst>
+              break;
+            }
+            else
+            { 
+              cout << "ERROR: invalid Instruction format";
+              return 1;
+            }
+            // pc += INS.find(token.getLexeme()) != INS.end() ? 1 : 0;
+          }
+
+          else if (kind == Token::Kind::LABEL)
+          {
+            // label def does not exist
+            if (symbolTable.find(tokenStr) == symbolTable.end())
+            {
+              symbolTable[tokenStr] = pc * 4;
+              continue;
+            }
+            else
+            {
+              cout << "ERROR: Duplicate definition of label" << tokenStr << endl;
+              return -1;
+            }
+          }
+          else
+          { // ERROR
+          cout << "ERROR: Invalid value read - must be INS or Label" << endl;
+          }
+        }
+      }
 
       if (testP1)
       {
@@ -70,40 +122,6 @@ int main()
             Inst *ins = new Beq{tokenLine[i + 1].toNumber(), tokenLine[i + 3].toNumber(), tokenLine[i + 5].toNumber()};
             ins->toBin();
             delete ins;
-          }
-        }
-      }
-
-      // Valid Tokens
-      if (getST)
-      {
-        //* 1st pass - sym table
-        int len = tokenLine.size();
-        for (int i = 0; i < len; ++i)
-        {
-          Token token = tokenLine[i];
-          Token::Kind kind = tokenLine[i].getKind();
-          // Cases: Label - WORD - INS
-
-          if (kind == Token::Kind::ID)
-          {
-            // check it's an INS ID, not a label use...
-            pc += INS.find(token.getLexeme()) != INS.end() ? 1 : 0;
-          }
-
-          else if (kind == Token::Kind::WORD)
-          {
-            outWord(token.toNumber());
-            ++pc;
-          }
-
-          else if (kind == Token::Kind::LABEL)
-          {
-            auto it = symbolTable.find(token.getLexeme());
-            if (it != symbolTable.end())
-            {
-              symbolTable[token.getLexeme()] = pc;
-            }
           }
         }
       }
