@@ -27,15 +27,15 @@ bool outputTokens = 0;
 bool getST = false;
 
 // 1, parse: group tokens (convert to INS) + error checking
-// 2, build symbolTable + dup check
+// 2, build symbolTable + dup check - DONE
 // 3, eliminate labels
 // 4, spit out bin
 int main()
 {
   std::string line;
-  unordered_map<string, int> symbolTable;
+  unordered_map<string, int> symbolTable; //* label to addr in bytes
   // vector<unique_ptr<Inst>> instructions; // TODO
-  int pc = 0; //? may be problematic
+  int pc = 0; //* in bytes
 
   try
   {
@@ -46,7 +46,7 @@ int main()
 
       if (getST)
       {
-        //* 1st pass - sym table
+        //* 1st pass - sym table + create INS objects
         for (int i = 0; i < len; ++i)
         {
           Token token = tokenLine[i]; // first read
@@ -55,6 +55,7 @@ int main()
 
           if (kind == Token::Kind::ID)
           {
+            pc++; // ? INCREMENT PC
             // is valid INS name
             if (INS.count(tokenStr) == 0)
             {
@@ -64,6 +65,7 @@ int main()
 
             if (isValidInsFormat(vector<Token>(tokenLine.begin() + i, tokenLine.end())))
             {
+              
               // todo: construct INS + push to vector<Inst>
               break;
             }
@@ -95,6 +97,8 @@ int main()
           }
         }
       }
+
+      //* 2nd pass - eliminate labels
 
       if (testP1)
       {
