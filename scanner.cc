@@ -67,13 +67,6 @@ int64_t Token::toNumber() const {
   return result;
 }
 
-// int myToNumber(Token t) {
-//   int64_t ans = t.toNumber();
-//     if (t.getKind() == Token::HEXINT) {
-
-//     }
-// }
-
 ScanningFailure::ScanningFailure(std::string message):
   message(std::move(message)) {}
 

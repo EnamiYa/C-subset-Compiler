@@ -11,12 +11,6 @@
 
 using namespace std;
 
-/*
- * C++ Starter code for CS241 A3
- *
- * This file contains the main function of your program. By default, it just
- * prints the scanned list of tokens back to standard output.
- */
 bool labelSubTest = 0;
 bool testP1 = 0;
 bool testP2 = 0;
@@ -34,7 +28,7 @@ int main()
 {
   std::string line;
   unordered_map<string, int> symbolTable; //* label to addr in bytes
-  vector<unique_ptr<Inst>> insVec;        // TODO
+  vector<unique_ptr<Inst>> insVec;        
   int pc = 0;                             //* in bytes
 
   try
@@ -70,22 +64,21 @@ int main()
             }
             else
             {
-              cerr << "ERROR: invalid Instruction format";
+              cerr << "ERROR: invalid Instruction format: " << token << endl;
               return 1;
             }
-            // pc += INS.find(token.getLexeme()) != INS.end() ? 1 : 0;
           }
           else if (kind == Token::Kind::LABEL)
           {
             // label def does not exist
-            if (symbolTable.find(tokenStr) == symbolTable.end())
+            if (symbolTable.find(tokenStr.substr(0, tokenStr.size() - 1)) == symbolTable.end())
             {
               symbolTable[tokenStr.substr(0, tokenStr.size() - 1)] = pc * 4;
               continue;
             }
             else
             {
-              cerr << "ERROR: Duplicate definition of label" << tokenStr << endl;
+              cerr << "ERROR: Duplicate definition of label " << tokenStr << endl;
               return -1;
             }
           }
@@ -150,13 +143,9 @@ int main()
     std::cerr << f.what() << std::endl;
     return 1;
   }
-  // You can add your own catch clause(s) for other kinds of errors.
 
   //* 2nd pass - eliminate labels
   int spc = 1;
-  // for(auto [k, v] : symbolTable) {
-  //   cout << "k= "<<k << " v= " << v << '\n';
-  // }
   for (const auto &ins : insVec)
   {
     if (auto *p = dynamic_cast<Word *>(ins.get()))
@@ -165,7 +154,7 @@ int main()
       {
         if (!symbolTable.count(p->label))
         {
-          cerr << "ERROR: label not defined" << endl;
+          cerr << "ERROR: label " << p->label << " not defined" << endl;
           return 1;
         }
         else
@@ -185,7 +174,7 @@ int main()
       {
         if (!symbolTable.count(p->label))
         {
-          cerr << "ERROR: label not defined" << endl;
+          cerr << "ERROR: label " << p->label << " not defined" << endl;
           return 1;
         }
         else
@@ -205,11 +194,11 @@ int main()
       {
         if (!symbolTable.count(p->label))
         {
-          // cerr << "ERROR: label not defined" << endl;
+          cerr << "ERROR: label " << p->label << " not defined" << endl;
           return 1;
         }
         else
-        { // defined
+        {
           // eliminate label
           p->i = (symbolTable[p->label] / 4) - spc;
           if (labelSubTest)

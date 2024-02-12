@@ -1,2 +1,2 @@
-sub $0, $1, $0
+hey: hey: .word hey
 
