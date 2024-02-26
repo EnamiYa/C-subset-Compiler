@@ -28,8 +28,8 @@ int main()
 {
   std::string line;
   unordered_map<string, int> symbolTable; //* label to addr in bytes
-  vector<unique_ptr<Inst>> insVec;        
-  int pc = 0;                             //* in bytes
+  vector<unique_ptr<Inst>> insVec;
+  int pc = 0; //* in bytes
 
   try
   {
