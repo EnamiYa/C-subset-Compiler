@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <fstream>
 #include <map>
 #include <unordered_set>
 
@@ -42,31 +43,40 @@ bool isRange(std::string s)
 
 int main()
 {
-    std::istream &in = std::cin;
+    string fname = "wlp4_DFA.dfa";
+    ifstream dfaFile(fname);
+    if (!dfaFile.is_open())
+    {
+        std::cerr << "Error opening the file: " << fname << std::endl;
+        return 1;
+    }
+
+    std::ostringstream fileContentStream;
+    fileContentStream << dfaFile.rdbuf();
+    std::string fContent = fileContentStream.str();
+
+    std::istringstream iss(fContent);
     std::string s;
+
     unordered_set<char> alpha; //? not needed
-    std::getline(in, s);       // Alphabet section (skip header)
+    std::getline(iss, s);      // Alphabet section (skip header)
     // Read characters or ranges separated by whitespace
 
     //* store alphabet
-    while (in >> s)
+    while (iss >> s)
     {
         if (s == STATES)
-        {
             break;
-        }
-        else
+
+        if (isChar(s))
         {
-            if (isChar(s))
+            alpha.emplace(s[0]);
+        }
+        else if (isRange(s))
+        {
+            for (char c = s[0]; c <= s[2]; ++c)
             {
-                alpha.emplace(s[0]);
-            }
-            else if (isRange(s))
-            {
-                for (char c = s[0]; c <= s[2]; ++c)
-                {
-                    alpha.emplace(c);
-                }
+                alpha.emplace(c);
             }
         }
     }
@@ -75,163 +85,160 @@ int main()
     unordered_set<string> accStates;
     string startState;
 
-    std::getline(in, s); // States section (skip header)
+    std::getline(iss, s); // States section (skip header)
     // Read states separated by whitespace
 
     bool firstRead = true;
-    while (in >> s) // ? getline
+    while (iss >> s) // ? getline
     {
         if (s == TRANSITIONS)
         {
             break;
         }
-        else
+
+        if (firstRead)
         {
-            if (firstRead)
-            {
-                if (s.back() == '!')
-                {
-                    startState = s.substr(0, s.size() - 1);
-                }
-                else
-                {
-                    startState = s;
-                }
+            startState = (s.back() == '!') ? s.substr(0, s.size() - 1) : s;
+            firstRead = false;
+        }
 
-                firstRead = false;
-            }
-
-            bool accepting = false;
-            if (s.back() == '!' && !isChar(s))
-            {
-                accepting = true;
-                s.pop_back();
-            }
-            if (accepting)
-            {
-                accStates.emplace(s);
-            }
+        bool accepting = false;
+        if (s.back() == '!' && !isChar(s))
+        {
+            accepting = true;
+            s.pop_back();
+        }
+        if (accepting)
+        {
+            accStates.emplace(s);
         }
     }
 
     //* map/transition fn state-input to state
 
-    std::getline(in, s); // Transitions section (skip header)
+    std::getline(iss, s); // Transitions section (skip header)
     // Read transitions line-by-line
 
-    map<pair<string, char>, string> transitionFn; //? unordered set will work to match pair
+    map<pair<string, char>, string> transitionFn;
 
-    while (std::getline(in, s))
+    while (std::getline(iss, s))
     {
         if (s == INPUT)
-        {
             break;
-        }
-        else
+
+        std::string fromState, symbols, toState;
+        std::istringstream line(s);
+        std::vector<std::string> lineVec;
+
+        while (line >> s)
         {
-            std::string fromState, symbols, toState;
-            std::istringstream line(s);
-            std::vector<std::string> lineVec;
+            lineVec.push_back(s);
+        }
 
-            while (line >> s)
+        fromState = lineVec.front();
+        toState = lineVec.back();
+
+        for (int i = 1; i < lineVec.size() - 1; ++i)
+        {
+            std::string s = lineVec[i];
+            if (isChar(s))
             {
-                lineVec.push_back(s);
+                symbols += s;
             }
-
-            fromState = lineVec.front();
-            toState = lineVec.back();
-
-            for (int i = 1; i < lineVec.size() - 1; ++i)
+            else if (isRange(s))
             {
-                std::string s = lineVec[i];
-                if (isChar(s))
+                for (char c = s[0]; c <= s[2]; ++c)
                 {
-                    symbols += s;
-                }
-                else if (isRange(s))
-                {
-                    for (char c = s[0]; c <= s[2]; ++c)
-                    {
-                        symbols += c;
-                    }
+                    symbols += c;
                 }
             }
-            for (char c : symbols)
-            {
-                pair<string, char> p{fromState, c};
-                transitionFn[p] = toState;
-            }
+        }
+        for (char c : symbols)
+        {
+            pair<string, char> p{fromState, c};
+            transitionFn[p] = toState;
         }
     }
 
     // Input section (already skipped header)
-    in >> s;
-    int j = 0;
-    bool lastToken = false;
-    while (true)
+    //* INPUT
+    while (iss >> s)
     {
-        string curState = startState;
-        int i = j;
-        int orgIndex = i;
-        bool midToken = false;
+        int j = 0;
+        bool veryLastToken = false;
+        bool curStrLastToken = false;
 
-        //* tokenization loop
-        for (; i <= s.size(); ++i)
+        //* S:  Tokenize string s
+        while (true)
         {
-            midToken = i > orgIndex;
-            lastToken = i == s.size();
+            string curState = startState;
+            int i = j;
+            int orgIndex = i;
+            bool midToken = false;
 
-            // * IGNORE WHITESPACE LOGIC
-            if (!lastToken && !midToken)
+            //* S_SUBSTR: tokenize substr of s
+            for (; i <= s.size(); ++i)
             {
-                if (isComment(s, i))
+                midToken = i > orgIndex;
+                veryLastToken = (i == fContent.size());
+                curStrLastToken = (i == s.size());
+
+                // * IGNORE WHITESPACE LOGIC
+                if (!veryLastToken && !midToken)
                 {
-                    // get to end of comment - ignore comment
-                    while (s[i] != NEWLINE)
+                    if (isComment(s, i))
                     {
-                        ++i;
+                        // get to end of comment - ignore comment
+                        while (s[i] != NEWLINE)
+                        {
+                            ++i;
+                        }
+                        j = i;
+                        break; //* S_SUBSTR
                     }
-                    j = i;
-                    break;
+                    else if (isWhiteSpace(s, i))
+                    {
+                        ++j;
+                        break; //* S_SUBSTR
+                    }
                 }
-                else if (isWhiteSpace(s, i))
+
+                //* no more valid transition
+                if (curStrLastToken || transitionFn.count({curState, s[i]}) == 0)
                 {
-                    ++j;
-                    break;
+                    if (debug)
+                    {
+                        cout << "TRANSITION FN: (" << curState << ", " << s[i] << ")" << endl;
+                        cout << "I AM HERE WHEN I SHOULDN'T BE" << endl;
+                    }
+
+                    if (accStates.count(curState) != 0)
+                    {
+                        cout << s.substr(j, i - j) << endl;
+                        j = i;
+                        break; //* S_SUBSTR
+                    }
+
+                    else
+                    { //* invalid token!
+                        cerr << "ERROR" << endl;
+                        return 0;
+                    }
                 }
-            }
 
-            //* no more valid transition
-            if (lastToken || transitionFn.count({curState, s[i]}) == 0)
-            {
-                if (debug)
-                {
-                    cout << "TRANSITION FN: (" << curState << ", " << s[i] << ")" << endl;
-                    cout << "I AM HERE WHEN I SHOULDN'T BE" << endl;
-                }
+                // make transition
+                pair<string, char> p{curState, s[i]};
+                curState = transitionFn[p];
 
-                if (accStates.count(curState) != 0)
-                {
-                    cout << s.substr(j, i - j) << endl;
-                    j = i;
-                    break;
-                }
+            } //* tokenization loop
 
-                else
-                { //* invalid token!
-                    cerr << "ERROR" << endl;
-                    return 0;
-                }
-            }
+            //* done tokenizing s?
+            if (i > s.size())
+                break; //* S
 
-            // make transition
-            pair<string, char> p{curState, s[i]};
-            curState = transitionFn[p];
-
-        } //* tokenization loop
-
-        if (lastToken)
-            return 0;
+            if (veryLastToken)
+                return 0; //* INPUT
+        }
     }
 
     if (debug)
@@ -243,4 +250,3 @@ int main()
         }
     }
 }
-
