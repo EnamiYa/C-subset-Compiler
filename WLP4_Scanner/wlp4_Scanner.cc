@@ -6,6 +6,7 @@
 #include <fstream>
 #include <map>
 #include <unordered_set>
+#include "helpers.h"
 
 using namespace std;
 
@@ -214,7 +215,16 @@ int main()
 
                     if (accStates.count(curState) != 0)
                     {
-                        cout << s.substr(j, i - j) << endl;
+                        string state = getStateID(curState);
+                        string lexeme = s.substr(j, i - j);
+
+                        if ((state == "NUM") && isOutOfRange(lexeme))
+                        {
+                            cerr << "ERROR: OUT OF RANGE NUM" << endl;
+                            return 0;
+                        }
+
+                        cout << state << " " << lexeme << endl;
                         j = i;
                         break; //* S_SUBSTR
                     }
