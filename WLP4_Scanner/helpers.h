@@ -1,3 +1,6 @@
+#ifndef HELPERS_H
+#define HELPERS_H
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -12,3 +15,5 @@ using namespace std;
 bool isOutOfRange(string s);
 
 string getStateID(string state);
+
+#endif

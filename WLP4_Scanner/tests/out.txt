@@ -1,0 +1,17 @@
+INT int
+WAIN wain
+LPAREN (
+INT int
+ID a
+COMMA ,
+INT int
+ID b
+RPAREN )
+LBRACE {
+RETURN return
+ID a
+PLUS +
+ID b
+SEMI ;
+RBRACE }
+

@@ -23,43 +23,55 @@ ID_W!
 ID_WA! 
 ID_WAI! WAIN!
 ID_WA$! ID_WAI$!
+ID_WAIN$!
 
 ID_WH! 
 ID_WHI! ID_WH$!
 ID_WHIL! ID_WHI$!
 WHILE! ID_WHIL$!
+ID_WHILE$!
 
 ID_W$!
 
 ID_I! 
 IF! ID_IN! ID_I$!
+ID_IF$!
+
+
 ID_IN$! INT!
+ID_INT$!
+
 
 ID_E! ID_EL! ID_E$! ID_ELS! ID_EL$! ELSE! ID_ELS$!
+ID_ELSE$!
+
 
 ID_P! ID_PR! ID_PRI! ID_PRIN! ID_PRINT! ID_PRINTL! PRINTLN! 
       ID_P$! ID_PR$! ID_PRI$! ID_PRIN$! ID_PRINT$! ID_PRINTL$!
+      ID_PRINTLN$!
 
 ID_R! ID_RE! ID_RET! ID_RETU! ID_RETUR! RETURN!
       ID_R$! ID_RE$! ID_RET$! ID_RETU$! ID_RETUR$!
+      ID_RETURN$!
+
 
 ID_N! ID_NU! ID_NUL! NULL!
       ID_N$! ID_NU$! ID_NUL$!
+      ID_NULL$!
 
 ID_n! ID_ne! NEW!
       ID_n$! ID_ne$!
+      ID_new$!
 
 ID_D! ID_DE! ID_DEL! ID_DELE! ID_DELET! DELETE!
       ID_D$! ID_DE$! ID_DEL$! ID_DELE$! ID_DELET$!
+      ID_DELETE$!
 
 ID_D1! ID_D1+!
-
 .TRANSITIONS
 empty 0 NUM_0
-
 empty 1-9 NUM_$
 NUM_$ 0-9 NUM_$
-
 empty + PLUS
 empty - MINUS
 empty * STAR 
@@ -74,148 +86,141 @@ empty { LBRACE
 empty } RBRACE
 empty [ LBRACK
 empty ] RBRACK
-
-////////////////////////////////////////// W
 empty w ID_W
-
 ID_W 0-9 b-g i-z A-Z ID_W$
-
-/// WAIN?
+ID_W$ 0-9 A-Z a-z ID_W$
 ID_W a ID_WA
-
 ID_WA i ID_WAI
-ID_WA 0-9 A-Z a-h j-z ID_WA$ // exclude i
-
+ID_WA 0-9 A-Z a-h j-z ID_WA$
+ID_WA$ 0-9 A-Z a-z ID_WA$
 ID_WAI n WAIN
 ID_WAI 0-9 A-Z a-m o-z ID_WAI$
-
-/// WHILE ?
+ID_WAI$ 0-9 A-Z a-z ID_WAI$
 ID_W h ID_WH
-
 ID_WH i ID_WHI
-ID_WH 0-9 A-Z a-h j-z ID_WH$ // exclude i
-
+ID_WH 0-9 A-Z a-h j-z ID_WH$
+ID_WH$ 0-9 A-Z a-z ID_WH$
 ID_WHI l ID_WHIL
 ID_WHI 0-9 A-Z a-k m-z ID_WHI$
-
+ID_WHI$ 0-9 A-Z a-z ID_WHI$
 ID_WHIL e WHILE
 ID_WHIL 0-9 A-Z a-d f-z ID_WHIL$
-
-////////////////////////////////////////// I
-
+ID_WHIL$ 0-9 A-Z a-z ID_WHIL$
 empty i ID_I
-
 ID_I n ID_IN
 ID_IN t INT
-
+ID_IN 0-9 A-Z a-s u-z ID_IN$
+ID_IN$ 0-9 A-Z a-z ID_IN$
 ID_I f IF
-
 ID_I 0-9 A-Z a-e g-m o-z ID_I$
-
-////////////////////////////////////////// E
-
+ID_I$ 0-9 A-Z a-z ID_I$
 empty e ID_E
-
 ID_E l ID_EL
 ID_E 0-9 A-Z a-k m-z ID_E$
-
+ID_E$ 0-9 A-Z a-z ID_E$
 ID_EL s ID_ELS
 ID_EL 0-9 A-Z a-r t-z ID_EL$
-
+ID_EL$ 0-9 A-Z a-z ID_EL$
 ID_ELS e ELSE
 ID_ELS 0-9 A-Z a-d f-z  ID_ELS$
-
-////////////////////////////////////////// P
+ID_ELS$ 0-9 A-Z a-z ID_ELS$
 empty p ID_P
-
 ID_P r ID_PR
 ID_P 0-9 A-Z a-q s-z ID_P$
-
+ID_P$ 0-9 A-Z a-z ID_P$
 ID_PR i ID_PRI
 ID_PR 0-9 A-Z a-h j-z ID_PR$
-
+ID_PR$ 0-9 A-Z a-z ID_PR$
 ID_PRI n ID_PRIN
 ID_PRI 0-9 A-Z a-m o-z ID_PRI$
-
+ID_PRI$ 0-9 A-Z a-z ID_PRI$
 ID_PRIN t ID_PRINT
 ID_PRIN 0-9 A-Z a-s u-z ID_PRIN$
-
+ID_PRIN$ 0-9 A-Z a-z ID_PRIN$
 ID_PRINT l ID_PRINTL
 ID_PRINT 0-9 A-Z a-k m-z ID_PRINT$
-
+ID_PRINT$ 0-9 A-Z a-z ID_PRINT$
 ID_PRINTL n PRINTLN
 ID_PRINTL 0-9 A-Z a-m o-z ID_PRINTL$
-
-////////////////////////////////////////// R
+ID_PRINTL$ 0-9 A-Z a-z ID_PRINTL$
 empty r ID_R
-
 ID_R e ID_RE
 ID_R 0-9 A-Z a-d f-z ID_R$
-
-
+ID_R$ 0-9 A-Z a-z ID_R$
 ID_RE t ID_RET
 ID_RE 0-9 A-Z a-s u-z ID_RE$
-
+ID_RE$ 0-9 A-Z a-z ID_RE$
 ID_RET u ID_RETU
 ID_RET 0-9 A-Z a-t v-z ID_RET$
-
+ID_RET$ 0-9 A-Z a-z ID_RET$
+ID_RETU r ID_RETUR
+ID_RETU 0-9 a-q s-z A-Z ID_RETU$
+ID_RETU$ 0-9 A-Z a-z ID_RETU$
 ID_RETUR n RETURN
 ID_RETUR 0-9 A-Z a-m o-z ID_RETUR$
-
-////////////////////////////////////////// N CAPS
-
+ID_RETUR$ 0-9 A-Z a-z ID_RETUR$
 empty N ID_N
-
 ID_N U ID_NU
 ID_N 0-9 A-T V-Z a-z ID_N$
-
+ID_N$ 0-9 A-Z a-z ID_N$
+ID_NU L ID_NUL
+ID_NU 0-9 A-K M-Z a-z ID_NU$
+ID_NU$ 0-9 A-Z a-z ID_NU$
 ID_NUL L NULL
 ID_NUL 0-9 A-K M-Z a-z ID_NUL$
-
-////////////////////////////////////////// N NOT_CAPS
-
+ID_NUL$ 0-9 A-Z a-z ID_NUL$
 empty n ID_n
-
 ID_n e ID_ne
 ID_n 0-9 A-Z a-d f-z ID_n$
-
+ID_n$ 0-9 A-Z a-z ID_n$
 ID_ne w NEW
 ID_ne 0-9 A-Z a-v x-z ID_ne$
-
-////////////////////////////////////////// N NOT_CAPS
+ID_ne$ 0-9 A-Z a-z ID_ne$
 empty d ID_D
-
 ID_D e ID_DE
 ID_D 0-9 A-Z a-d f-z ID_D$
-
+ID_D$ 0-9 A-Z a-z ID_D$
 ID_DE l ID_DEL
 ID_DE 0-9 A-Z a-k m-z ID_DE$
-
+ID_DE$ 0-9 A-Z a-z ID_DE$
 ID_DEL e ID_DELE
 ID_DEL 0-9 A-Z a-d f-z ID_DEL$
-
+ID_DEL$ 0-9 A-Z a-z ID_DEL$
 ID_DELE t ID_DELET
 ID_DELE 0-9 A-Z a-s u-z ID_DELE$
-
+ID_DELE$ 0-9 A-Z a-z ID_DELE$
 ID_DELET e DELETE
 ID_DELET 0-9 A-Z a-d f-z ID_DELET$
-
-////////////////////////////////////////// OTHER IDS
+ID_DELET$ 0-9 A-Z a-z ID_DELET$
 empty a-c f-h j-m o q s-v x-z A-M O-Z ID_D1
 ID_D1 0-9 A-Z a-z ID_D1+
 ID_D1+ 0-9 A-Z a-z ID_D1+
-
 empty < LT
 LT = LE
-
 empty > GT
 GT = GE
-
 empty = BECOMES
 BECOMES = EQ
-
 empty ! Z
 Z = NE
-
+DELETE 0-9 A-Z a-z ID_DELETE$
+ID_DELETE$ 0-9 A-Z a-z ID_DELETE$
+NEW 0-9 A-Z a-z ID_new$
+ID_new$ 0-9 A-Z a-z ID_new$
+NULL 0-9 A-Z a-z ID_NULL$
+ID_NULL$ 0-9 A-Z a-z ID_NULL$
+RETURN 0-9 A-Z a-z ID_RETURN$
+ID_RETURN$ 0-9 A-Z a-z ID_RETURN$
+PRINTLN 0-9 A-Z a-z ID_PRINTLN$
+ID_PRINTLN$ 0-9 A-Z a-z ID_PRINTLN$
+ELSE 0-9 A-Z a-z ID_ELSE$
+ID_ELSE$ 0-9 A-Z a-z ID_ELSE$
+INT 0-9 A-Z a-z ID_INT$
+ID_INT$ 0-9 A-Z a-z ID_INT$
+IF 0-9 A-Z a-z ID_IF$
+ID_IF$ 0-9 A-Z a-z ID_IF$
+WHILE 0-9 A-Z a-z ID_WHILE$
+ID_WHILE$ 0-9 A-Z a-z ID_WHILE$
+WAIN 0-9 A-Z a-z ID_WAIN$
+ID_WAIN$ 0-9 A-Z a-z ID_WAIN$
 .INPUT
-

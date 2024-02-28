@@ -4,3 +4,6 @@
 - read from string instead of input - done
 - cout valid transitions - done
 - range check for NUM token - done
+
+# todo
+- test

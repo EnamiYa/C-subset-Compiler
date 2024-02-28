@@ -44,7 +44,7 @@ bool isRange(std::string s)
 
 int main()
 {
-    string fname = "wlp4_DFA.dfa";
+    string fname = "wlp4.dfa";
     ifstream dfaFile(fname);
     if (!dfaFile.is_open())
     {
@@ -160,13 +160,13 @@ int main()
             transitionFn[p] = toState;
         }
     }
-
+    s = "";
     // Input section (already skipped header)
     //* INPUT
-    while (iss >> s)
+    while (cin >> s && !cin.eof())
     {
+        bool sawComment = false;
         int j = 0;
-        bool veryLastToken = false;
         bool curStrLastToken = false;
 
         //* S:  Tokenize string s
@@ -181,20 +181,16 @@ int main()
             for (; i <= s.size(); ++i)
             {
                 midToken = i > orgIndex;
-                veryLastToken = (i == fContent.size());
                 curStrLastToken = (i == s.size());
 
                 // * IGNORE WHITESPACE LOGIC
-                if (!veryLastToken && !midToken)
+                if (!midToken)
                 {
-                    if (isComment(s, i))
+                    sawComment = isComment(s, i);
+                    if (sawComment)
                     {
-                        // get to end of comment - ignore comment
-                        while (s[i] != NEWLINE)
-                        {
-                            ++i;
-                        }
-                        j = i;
+                        string tmp;
+                        getline(cin, tmp);
                         break; //* S_SUBSTR
                     }
                     else if (isWhiteSpace(s, i))
@@ -212,6 +208,8 @@ int main()
                         cout << "TRANSITION FN: (" << curState << ", " << s[i] << ")" << endl;
                         cout << "I AM HERE WHEN I SHOULDN'T BE" << endl;
                     }
+
+                    // cout << "CURRENT STATE " << curState << endl;
 
                     if (accStates.count(curState) != 0)
                     {
@@ -242,12 +240,14 @@ int main()
 
             } //* tokenization loop
 
-            //* done tokenizing s?
-            if (i > s.size())
-                break; //* S
+            if (sawComment)
+            {
+                break;
+            }
 
-            if (veryLastToken)
-                return 0; //* INPUT
+            //* done tokenizing s?
+            if (i >= s.size())
+                break; //* S
         }
     }
 
@@ -259,4 +259,5 @@ int main()
             std::cout << "ACCEPTING STATE :" << s << endl;
         }
     }
+    return 0;
 }

@@ -34,11 +34,28 @@ const std::string RBRACK = "RBRACK";
 const std::string AMP = "AMP";
 const std::string NULL_STR = "NULL";
 
+#include <iostream>
+#include <stdexcept>
+
+using namespace std;
+
 bool isOutOfRange(string s)
 {
     int n = -1;
-    istringstream iss(s);
-    iss >> n;
+
+    try
+    {
+        n = stoi(s);
+    }
+    catch (const out_of_range &err)
+    {
+        return true;
+    }
+    catch (const invalid_argument &err)
+    {
+        cerr << "ERROR: stoi received an invalid argument" << endl;
+        return true;
+    }
 
     return (n > INT32_MAX);
 }
