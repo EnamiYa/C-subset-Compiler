@@ -51,7 +51,6 @@ int main()
     }
 
     // 3. ACTIONS
-    // todo deal with .EMPTY input - may have prob
     int left = 0;
     vector<string> reduction;
 
