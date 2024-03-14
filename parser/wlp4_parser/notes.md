@@ -15,3 +15,8 @@
 
 # WARNINGS - TO READ IF I HAVE BUG
 - BOF BOF and EOF EOF DON'T CONTRIBUTE TO K/[input] string
+
+# takeaways
+- step away if stuck or tired
+- test gradually and continuously - debug prints
+- take away as much code out of main as possible

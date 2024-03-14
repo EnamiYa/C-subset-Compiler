@@ -24,12 +24,19 @@ struct Node
     }
 };
 
+bool isWhitespace(const std::string &str)
+{
+    return std::all_of(str.begin(), str.end(), [](unsigned char c)
+                       { return std::isspace(c); });
+}
+
 // preorder: node-left-right
 void traverse(Node *n, const vector<pair<string, vector<string>>> &prods)
 {
     if (n->isTerm)
     {
         printf("%s %s\n", n->kind.c_str(), n->lexeme.c_str());
+        return;
     }
     else
     {
@@ -37,10 +44,18 @@ void traverse(Node *n, const vector<pair<string, vector<string>>> &prods)
         assert(n->rule != -1);
         auto pr = prods[n->rule];
         cout << pr.first;
-        for (const auto &rhs : prods[n->rule].second)
+        if (prods[n->rule].second.empty())
         {
-            cout << " " << rhs;
+            cout << " .EMPTY";
         }
+        else
+        {
+            for (const auto &rhs : prods[n->rule].second)
+            {
+                cout << " " << rhs;
+            }
+        }
+
         cout << endl;
     }
 
@@ -50,13 +65,16 @@ void traverse(Node *n, const vector<pair<string, vector<string>>> &prods)
     }
 }
 
-void freeNodes(Node* node) {
-    if (node == nullptr) {
+void freeNodes(Node *node)
+{
+    if (node == nullptr)
+    {
         return; // Base case: If node is nullptr, return
     }
 
     // Recursively deallocate children nodes
-    for (Node* child : node->children) {
+    for (Node *child : node->children)
+    {
         freeNodes(child);
     }
 

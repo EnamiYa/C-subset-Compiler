@@ -25,12 +25,6 @@ const string EMPTY = ".EMPTY";
 const string BOF = "BOF";
 const string EOF_ = "EOF";
 
-bool isWhitespace(const std::string &str)
-{
-    return std::all_of(str.begin(), str.end(), [](unsigned char c)
-                       { return std::isspace(c); });
-}
-
 int main()
 {
     //* 1. build production vector
@@ -149,13 +143,10 @@ int main()
     stateStack.push(0);
 
     stack<Node *> treeStack;
-    // vector<string> reduction; //! BAD - DUP
     int left = 0, len = input.size();
 
     //* transitions: from-state symbol to-state
     //* reductions: state-number rule-number tag
-    //? map<int, set<int>> reduceStatesToRules;
-    //? map<int, set<string>> ruleToFollow;
 
     //* produce actions
     while (left <= len)
@@ -166,7 +157,7 @@ int main()
             return 0;
         }
 
-        bool accept = (left == len) && (input[left - 1].first == EOF_); // todo test valid!
+        bool accept = (left == len) && (input[left - 1].first == EOF_);
 
         auto getRuleNumToReduce = [&](int state, string s, bool getAccept = false) -> int
         {
@@ -188,28 +179,27 @@ int main()
 
         if (rule != -1 && !ruleToFollow[rule].empty())
         {
-            cout << "REDUCE" << endl;
             // find rule for curState that has curChar in follow
             int n = prods[rule].second.size(); // # symbols in RHS of rule
-            Node NT{rule, prods[rule].first};
+            Node *NT = new Node{rule, prods[rule].first};
 
             while (n > 0)
             {
-                NT.addChild(treeStack.top());
+                NT->addChild(treeStack.top());
                 treeStack.pop(); //? memo leak
 
                 stateStack.pop();
                 --n;
             }
-            reverse(NT.children.begin(), NT.children.end());
+            reverse(NT->children.begin(), NT->children.end());
 
-            treeStack.push(&NT);
+            treeStack.push(NT);
 
             //* ACCEPT
             if (accept && (treeStack.top()->N == "start"))
             {
                 // todo print && free nodes
-                // traverse(treeStack.top(), prods);
+                traverse(treeStack.top(), prods);
                 freeNodes(treeStack.top());
                 return 0;
             }
@@ -221,7 +211,7 @@ int main()
         //* SHIFT
         else
         {
-            cout << "SHIFT" << endl;
+            // cout << "SHIFT" << endl;
             treeStack.push(new Node{input[left].first, input[left].second});
             // make transition
             pair<int, string> p{stateStack.top(), treeStack.top()->isTerm ? treeStack.top()->kind : treeStack.top()->N};
@@ -234,7 +224,7 @@ int main()
                 //* REJECT
                 fprintf(stderr, "ERROR at %d\n", left);
 
-                while (!treeStack.empty()) // todo test freeing
+                while (!treeStack.empty())
                 {
                     auto toFREE = treeStack.top();
                     freeNodes(toFREE);
@@ -246,7 +236,6 @@ int main()
             left++;
         }
     }
-    printf("this should probably never happen");
     printf("WE CONSUMED THE ENTIRE INPUT WITHOUT REJECTING OR ACCEPTING => REJECT ON EMPTY - NO VALID TRANSITION");
     fprintf(stderr, "ERROR at %d\n", left);
 
