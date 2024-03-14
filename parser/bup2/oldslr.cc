@@ -15,6 +15,7 @@ bool debug = 0;
 bool debugProds = 0;
 bool debugInput = 0;
 bool debugTransitions = 0;
+bool dbBuggyEMPTYTransition = 0;
 bool dbReductions = 0;
 
 const string EMPTY = ".EMPTY";
@@ -47,11 +48,7 @@ int main()
 
         vector<string> rhs;
         while (iss >> cur)
-        {
-            if (cur == EMPTY)
-                break;
             rhs.emplace_back(cur);
-        }
 
         prods.push_back({lhs, rhs});
 
@@ -141,8 +138,14 @@ int main()
     }
 
     //* Parsing
+
     stack<int> stateStack;
+
     stateStack.push(0);
+    if (debug && dbBuggyEMPTYTransition)
+    {
+        cout << "AFTER PUSHING THE START STATE, STATE STACK EMPTY = " << boolalpha << stateStack.empty() << endl;
+    }
 
     stack<string> symStack;
     vector<string> reduction; //! BAD - DUP
@@ -151,14 +154,40 @@ int main()
 
     //* transitions: from-state symbol to-state
     //* reductions: state-number rule-number tag
+
     //? map<int, set<int>> reduceStatesToRules;
     //? map<int, set<string>> ruleToFollow;
 
     //* produce actions
+    /*
+     we need left == len too cz we still need to reduce when the input is
+    empty and the stack has the RHS or start symbol
+    */
     bool firstIT = true;
 
     while (left <= len)
     {
+        if (debug && dbBuggyEMPTYTransition)
+        {
+            printf("SYMBOL STACK\n");
+            auto tmp = symStack;
+            while (!tmp.empty())
+            {
+                cout << tmp.top() << " ";
+                tmp.pop();
+            }
+            cout << endl;
+
+            printf("STATE STACK\n");
+
+            auto tmp2 = stateStack;
+            while (!tmp2.empty())
+            {
+                cout << tmp2.top() << " ";
+                tmp2.pop();
+            }
+            cout << endl;
+        }
 
         if (left == len && (input.back() != "EOF"))
         {
@@ -182,7 +211,6 @@ int main()
             }
             cout << "\n";
         };
-
         if (firstIT)
         {
             firstIT = false;
@@ -193,31 +221,55 @@ int main()
         {
             if (reduceStatesToRules.count(state))
             {
+                // check s belongs to follow set of any of
+                // corresponding rules
                 set<int> potentialRules = reduceStatesToRules[state];
                 for (const auto &r : potentialRules)
                 {
 
-                    if ((getAccept && (ruleToFollow[r].find(".ACCEPT") != ruleToFollow[r].end())) || ruleToFollow[r].count(s) || (s.empty() && ruleToFollow[r].empty())) return r;
+                    if ((getAccept && (ruleToFollow[r].find(".ACCEPT") != ruleToFollow[r].end())) || ruleToFollow[r].count(s))
+                    {
+                        return r;
+                    }
                 }
             }
             return -1;
         };
 
         //* REDUCE
+        // todo deal with case where left == len , make sure nothing bad could happen later
         int rule = getRuleNumToReduce(stateStack.top(), accept ? input[0] : input[left], accept);
 
-        if (rule != -1 && !ruleToFollow[rule].empty())
+        if (debug && dbBuggyEMPTYTransition)
+        {
+            cout << "RULE TO REDUCE IS " << rule << endl;
+        }
+
+        if (rule != -1)
         {
             // find rule for curState that has curChar in follow
-            int n = prods[rule].second.size(); // # symbols in RHS of rule
+            int n = ruleToFollow[rule].count(EMPTY) ? 0 : prods[rule].second.size(); // # symbols in RHS of rule
 
             while (n > 0)
             {
                 symStack.pop();
                 reduction.pop_back();
 
+                if (debug && dbBuggyEMPTYTransition)
+                {
+                    printf("BEFORE POP STATE STACK EMPTY = ");
+                    cout << boolalpha << stateStack.empty() << endl;
+                }
+
                 stateStack.pop();
                 --n;
+
+                if (debug && dbBuggyEMPTYTransition)
+                {
+                    printf("INSIDE REDUCE, RULE NUMBER BEING APPLIED IS: %d\n", rule);
+                    printf("AFTER POP STATE STACK EMPTY = ");
+                    cout << boolalpha << stateStack.empty() << endl;
+                }
             }
 
             //* for some reason, we will have one state left in stateStack on accept - we clear it
@@ -237,6 +289,15 @@ int main()
                 return 0;
             }
 
+            if (stateStack.empty() || symStack.empty())
+            {
+                printf("STATE STACK EMPTY = ");
+                cout << boolalpha << stateStack.empty() << endl;
+                printf("SYMBOL STACK EMPTY = ");
+                cout << boolalpha << symStack.empty() << endl;
+                return 0;
+            }
+
             pair<int, string> p{stateStack.top(), symStack.top()};
             stateStack.push(trMap[p]);
         }
@@ -245,8 +306,15 @@ int main()
         else
         {
             symStack.push(input[left]);
+            //* must never be true that the stateStack is empty here
+            //* if it is, the SLR(1) DFA is corrupted, but we assume valid input
+
             // make transition
             pair<int, string> p{stateStack.top(), symStack.top()};
+            if (debug && dbBuggyEMPTYTransition)
+            {
+                cout << "FOUND TRANSITION FOR : (" << p.first << ", " << p.second << " )" << boolalpha << (trMap.count(p) != 0) << endl;
+            }
             if (trMap.count(p))
             {
                 stateStack.push(trMap[p]);
@@ -264,6 +332,6 @@ int main()
     }
     printf("this should probably never happen");
     printf("WE CONSUMED THE ENTIRE INPUT WITHOUT REJECTING OR ACCEPTING => REJECT ON EMPTY - NO VALID TRANSITION");
-    fprintf(stderr, "ERROR at %d\n", left+1);
+    fprintf(stderr, "ERROR at %d\n", left);
     return 0;
 }
