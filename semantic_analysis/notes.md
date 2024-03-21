@@ -11,7 +11,7 @@
 - TODO:
     1. rebuild parse tree
         - build AST: remove augmented grammar nodes: first two lines of input + last line
-        - build tree - add type info
+        - build tree
 
     2. symbol table / name errors:
         - vars: NT: dcls/params - DS: field in Procedure
