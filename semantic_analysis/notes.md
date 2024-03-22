@@ -1,4 +1,5 @@
 # TODO NEXT:
+-  params don't get added to local ST of procedures (both wain and others) - FINISH TESTING
 - finish fn call checks: no call of not declared
 - check exns free memo correctly
 - check if I leak memo valgrind
@@ -6,6 +7,7 @@
 # Questions
 - how to catch invalid: int p(int p) { return p(p); } - rule is that p is the variable
 - how to know which children to traverse to get types?
+- how to catch declarations all at top?
 
 # ROAD PLAN
 - input: parse tree

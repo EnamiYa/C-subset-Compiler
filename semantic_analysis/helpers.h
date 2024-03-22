@@ -7,16 +7,19 @@
 #include <exception>
 #include <cassert>
 
+
 using namespace std;
 
 bool printPairRules = 0;
 bool printStrRules = 0;
 
-struct SEMANTIC_ANALYSIS_ERROR : public std::exception {
+struct SEMANTIC_ANALYSIS_ERROR : public std::exception
+{
     string msg;
-    SEMANTIC_ANALYSIS_ERROR(const string& custom = "N/A") : msg{"SEMANTIC ANALYSIS ERROR - DETAILS: " + custom + "\n"} {}
+    SEMANTIC_ANALYSIS_ERROR(const string &custom = "N/A") : msg{"SEMANTIC ANALYSIS ERROR - DETAILS: " + custom + "\n"} {}
 
-    virtual const char* what() const noexcept override {
+    virtual const char *what() const noexcept override
+    {
         return msg.c_str();
     }
 };

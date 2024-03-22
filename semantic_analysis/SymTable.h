@@ -16,26 +16,48 @@ struct Procedure
     map<string, TYPES_WLP4> vars; // map to know that 1st params.size are the params
 };
 
+string typeToStr(TYPES_WLP4 t)
+{
+    if (t == TYPES_WLP4::INT)
+        return "INT";
+    if (t == TYPES_WLP4::PTR)
+        return "INT STAR";
+    return "NO TYPE";
+}
+
 //! throws
 void checkVarUses(Node *n, const map<string, TYPES_WLP4> &vars)
 {
     if (!n || n->isTerm)
         return;
 
-    for (const auto &ch : n->children)
+    if (string rl = n->rule; rl == "factor ID" || rl == "lvalue ID")
     {
-        string rl = ch->rule;
-
-        if (rl == "factor ID" || rl == "lvalue ID")
-        {
-
-            if (string id = ch->children[0]->lexeme; vars.count(id) == 0)
-                throw SEMANTIC_ANALYSIS_ERROR{"Use of undeclared variable " + id};
-        }
-        else
-        {
+        if (string id = n->children[0]->lexeme; vars.count(id) == 0)
+            throw SEMANTIC_ANALYSIS_ERROR{"Use of undeclared variable " + id};
+    }
+    else
+    {
+        for (const auto &ch : n->children)
             checkVarUses(ch, vars);
-        }
+    }
+}
+
+//! throws
+void checkProcCalls(Node *n, const map<string, Procedure> &symTable)
+{
+    if (!n || n->isTerm)
+        return;
+
+    if (string rl = n->rule; rl == "factor ID LPAREN RPAREN" || rl == "factor ID LPAREN arglist RPAREN")
+    {
+        if (string name = n->children[0]->lexeme; symTable.count(name) == 0)
+            throw SEMANTIC_ANALYSIS_ERROR{"Call of undeclared procedure: " + name};
+    }
+    else
+    {
+        for (const auto &ch : n->children)
+            checkProcCalls(ch, symTable);
     }
 }
 
@@ -47,34 +69,29 @@ void getVars(Node *n, map<string, TYPES_WLP4> &vars, vector<TYPES_WLP4> &params,
     if (n->isTerm)
         return;
 
-    for (const auto &ch : n->children)
+    if (n->getLHS() == "dcl")
     {
-        if (ch->isTerm)
-            continue;
+        // TODO TEST that I AM ACCESSING STUFF PROPERLY
+        TYPES_WLP4 type = (n->children[0]->children.size() == 1) ? TYPES_WLP4::INT : TYPES_WLP4::PTR;
+        string name = n->children[1]->lexeme;
 
-        if (n->getLHS() == "dcl")
+        if (p)
         {
-            // TODO TEST that I AM ACCESSING STUFF PROPERLY
-            TYPES_WLP4 type = (ch->children[0]->children.size() == 1) ? TYPES_WLP4::INT : TYPES_WLP4::PTR;
-            string name = ch->children[1]->lexeme;
-
-            if (p)
-            {
-                params.push_back(type);
-            }
-
-            if (vars.count(name) != 0)
-                throw SEMANTIC_ANALYSIS_ERROR{"Duplicate variable declaration: " + name};
-
-            vars[name] = type;
+            params.push_back(type);
         }
 
-        else if (ch->getLHS() == "dcls" || ch->getLHS() == "params" || ch->getLHS() == "paramlist")
+        if (vars.count(name) != 0)
+            throw SEMANTIC_ANALYSIS_ERROR{"Duplicate variable declaration: " + name};
+
+        vars[name] = type;
+    }
+
+    // else if (n->getLHS() == "dcls" || n->getLHS() == "params" || n->getLHS() == "paramlist")
+    else
+    {
+        for (const auto &c : n->children)
         {
-            for (const auto &c : ch->children)
-            {
-                getVars(c, vars, params, p);
-            }
+            getVars(c, vars, params, p);
         }
     }
 }
@@ -82,8 +99,6 @@ void getVars(Node *n, map<string, TYPES_WLP4> &vars, vector<TYPES_WLP4> &params,
 Procedure getLocalST(Node *n)
 {
     assert(n && "must be procedure or main\n");
-
-    auto p = strToPairRule(n->rule);
 
     // 4. add vars
     vector<TYPES_WLP4> pms;
@@ -105,51 +120,51 @@ Procedure getLocalST(Node *n)
     return Procedure{pms, vars};
 }
 
+//! throws
 //* find procedures subtrees
 void getGlobalST(Node *root, map<string, Procedure> &symTable)
 {
-    if (!root)
+    if (!root || root->isTerm)
         return;
 
-    if (!root->isTerm)
+    auto p = strToPairRule(root->rule);
+
+    //* recursive case
+    if (p.first == "procedures")
     {
-        auto p = strToPairRule(root->rule);
-
-        //* recursive case
-        if (p.first == "procedures")
+        for (const auto &n : root->children)
         {
-            for (const auto &n : root->children)
-            {
-                getGlobalST(n, symTable);
-            }
+            getGlobalST(n, symTable);
         }
+    }
 
-        //* found procedure
-        else if (p.first == "main" || p.first == "procedure")
+    //* found procedure
+    else if (p.first == "main" || p.first == "procedure")
+    {
+        string name = root->children[1]->lexeme;
+
+        if (symTable.count(name) != 0)
+            throw SEMANTIC_ANALYSIS_ERROR{"Duplicate procedure declaration: " + name};
+
+        symTable[name] = getLocalST(root);
+
+        //* check no undeclared var uses
+        for (const auto &ch : root->children)
         {
-            string name = root->children[1]->lexeme;
-
-            if (symTable.count(name) != 0)
-                throw SEMANTIC_ANALYSIS_ERROR{"Duplicate procedure name: " + name};
-
-            symTable[name] = getLocalST(root);
-
-            //* check no undeclared var uses
-            for (const auto &ch : root->children)
+            if (ch->getLHS() == "statements" || ch->getLHS() == "expr")
             {
-                if (ch->getLHS() == "statements" || ch->getLHS() == "expr")
-                {
-                    checkVarUses(ch, symTable[name].vars);
+                checkVarUses(ch, symTable[name].vars);
 
-                    //* check no call of undeclared fn
-                    // checkProcCalls(); // todo
-                }
+                //* check no call of undeclared fn
+                checkProcCalls(ch, symTable);
             }
         }
     }
-    // 5. check fn calls
-
-    return;
+    else
+    {
+        return; // todo test - just recurse to be safe
+    }
+    // todo 5. check fn calls
 }
 
 #endif

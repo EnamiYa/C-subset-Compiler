@@ -1,0 +1,6 @@
+int f(int c) { int a = 1; return c; }
+
+int wain(int a, int b) { 
+    return 1;
+}
+

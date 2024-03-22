@@ -46,7 +46,11 @@ struct Node
 
     string getLHS() const
     {
-        assert(!isTerm && "must be non terminal");
+        // if (isTerm)
+        // {
+        //     printf("NODE %s %s MUST BE NON TERMINAL\n", this->kind.c_str(), this->lexeme.c_str());
+        // }
+        // assert(!isTerm && "must be non terminal");
         return strToPairRule(rule).first;
     }
 
