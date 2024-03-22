@@ -1,6 +1,7 @@
 # TODO NEXT:
+- finish fn call checks: no call of not declared
+- check exns free memo correctly
 - check if I leak memo valgrind
-- start symbol table
 
 # Questions
 - how to catch invalid: int p(int p) { return p(p); } - rule is that p is the variable
@@ -13,16 +14,16 @@
     - INVALID: ERROR to stderr
 
 - TODO:
-    1. rebuild parse tree
+    1. rebuild parse tree - DONE
         - build AST: remove augmented grammar nodes: first two lines of input + last line
         - build tree
 
     2. symbol table / name errors:
         - vars: NT: dcls/params - DS: field in Procedure
-            - no dup vars - rule: dcl -> type ID
-            - no undeclared use - rule: statements -> ...
+            - no dup vars - rule: dcl -> type ID - done
+            - no undeclared use - rule: statements -> ... - done
         - procedures: NT: procedure/main - DS: map<string, Procedure>
-            - no dup procedure name - rule: procedure/main -> ...
+            - no dup procedure name - rule: procedure/main -> ... - done
             - no undeclared call - rule: factor -> ID LPAREN*
             - correct arglist: # args + types - rule: params -> ...
 

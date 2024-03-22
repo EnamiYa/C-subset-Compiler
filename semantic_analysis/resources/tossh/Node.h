@@ -43,18 +43,6 @@ struct Node
     {
         children.emplace_back(n);
     }
-
-    string getLHS() const
-    {
-        assert(!isTerm && "must be non terminal");
-        return strToPairRule(rule).first;
-    }
-
-    auto getRHSVector() const
-    {
-        assert(!isTerm && "must be non terminal");
-        return strToPairRule(rule).second;
-    }
 };
 
 Node *buildNode(const string &s)
@@ -169,8 +157,7 @@ void printTree(Node *n)
         cout << endl;
     }
 
-    for (const auto &child : n->children)
-        printTree(child);
+    for (const auto &child : n->children) printTree(child);
 }
 
 void freeNodes(Node *node)
