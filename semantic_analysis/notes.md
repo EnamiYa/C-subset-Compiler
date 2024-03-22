@@ -1,3 +1,7 @@
+# TODO NEXT:
+- check if I leak memo valgrind
+- start symbol table
+
 # Questions
 - how to catch invalid: int p(int p) { return p(p); } - rule is that p is the variable
 - how to know which children to traverse to get types?

@@ -17,6 +17,8 @@
 
 using namespace std;
 
+const string UNINITIALIZED = "UNINITIALIZED";
+
 enum class TYPES_WLP4
 {
     INT = 0,
@@ -28,9 +30,9 @@ struct Node
 {
     bool isTerm = true;
 
-    string kind = "UNINITIALIZED", lexeme = "UNINITIALIZED"; // leaf
+    string kind = UNINITIALIZED, lexeme = UNINITIALIZED; // leaf
 
-    string rule = "UNINITIALIZED"; // internal node
+    string rule = UNINITIALIZED; // internal node
     vector<Node *> children;
 
     TYPES_WLP4 type = TYPES_WLP4::NA;
@@ -63,30 +65,6 @@ Node *buildNode(const string &s)
     }
 
     return ans;
-}
-
-Node *rebuildTree(istream &cin, bool print = false)
-{
-    //* 1. build independent Nodes
-    istringstream iss;
-    string s;
-    string _bof = "BOF";
-    vector<Node *> preorder;
-
-    while (getline(cin, s))
-    {
-        if ((search(s.begin(), s.end(), _bof.begin(), _bof.end()) != s.end()))
-            continue;
-        if (s == "EOF EOF")
-            break;
-
-        preorder.push_back(buildNode(s)); //* NT don't have children yet
-    }
-
-    //* 2. link Nodes to form Tree
-    auto root = rebuildTreeHelper(preorder);
-
-    return root;
 }
 
 // todo test
@@ -134,9 +112,30 @@ Node *rebuildTreeHelper(vector<Node *> preorder)
     return root;
 }
 
-// preorder: node-left-right
-//todo fix traverse for testing
-void traverse(Node *n, const vector<pair<string, vector<string>>> &prods)
+Node *rebuildTree(istream &cin)
+{
+    //* 1. build independent Nodes
+    istringstream iss;
+    string s;
+    string _bof = "BOF";
+    vector<Node *> preorder;
+
+    while (getline(cin, s))
+    {
+        if ((search(s.begin(), s.end(), _bof.begin(), _bof.end()) != s.end()))
+            continue;
+        if (s == "EOF EOF")
+            break;
+
+        preorder.push_back(buildNode(s)); //* NT don't have children yet
+    }
+
+    //* 2. link Nodes to form Tree
+    auto root = rebuildTreeHelper(preorder);
+    return root;
+}
+
+void printTree(Node *n)
 {
     if (n->isTerm)
     {
@@ -145,28 +144,37 @@ void traverse(Node *n, const vector<pair<string, vector<string>>> &prods)
     }
     else
     {
-        assert(n->rule != -1);
-        auto pr = prods[n->rule];
+        // todo test
+        assert(n->rule != UNINITIALIZED);
+        auto pr = strToPairRule(n->rule);
         cout << pr.first;
-        if (prods[n->rule].second.empty())
+
+        for (const auto &rhs : pr.second)
         {
-            cout << " .EMPTY";
-        }
-        else
-        {
-            for (const auto &rhs : prods[n->rule].second)
-            {
-                cout << " " << rhs;
-            }
+            cout << " " << rhs;
         }
 
         cout << endl;
     }
 
-    for (const auto &child : n->children)
+    for (const auto &child : n->children) printTree(child);
+}
+
+void freeNodes(Node *node)
+{
+    if (node == nullptr)
     {
-        traverse(child, prods);
+        return; // Base case: If node is nullptr, return
     }
+
+    // Recursively deallocate children nodes
+    for (Node *child : node->children)
+    {
+        freeNodes(child);
+    }
+
+    // Deallocate the current node
+    delete node;
 }
 
 #endif

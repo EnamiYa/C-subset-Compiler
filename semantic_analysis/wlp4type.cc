@@ -11,4 +11,7 @@ bool db = 1;
 
 int main()
 {
+    Node* root = rebuildTree(cin);
+    printTree(root);
+    freeNodes(root);
 }
