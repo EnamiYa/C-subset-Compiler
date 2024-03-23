@@ -25,6 +25,7 @@ string typeToStr(TYPES_WLP4 t)
     return "NO TYPE";
 }
 
+
 //! throws
 void checkVarUses(Node *n, const map<string, TYPES_WLP4> &vars)
 {

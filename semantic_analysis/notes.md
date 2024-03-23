@@ -1,6 +1,5 @@
 # TODO NEXT:
--  params don't get added to local ST of procedures (both wain and others) - FINISH TESTING
-- finish fn call checks: no call of not declared
+- finish type checking
 - check exns free memo correctly
 - check if I leak memo valgrind
 - catch f(int c) { return &c; } - not well typed
