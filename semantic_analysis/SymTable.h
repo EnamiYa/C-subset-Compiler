@@ -54,6 +54,9 @@ void checkProcCalls(Node *n, const map<string, Procedure> &symTable)
     {
         if (string name = n->children[0]->lexeme; symTable.count(name) == 0)
             throw SEMANTIC_ANALYSIS_ERROR{"Call of undeclared procedure: " + name};
+
+        //* called correctly
+        
     }
     else
     {
