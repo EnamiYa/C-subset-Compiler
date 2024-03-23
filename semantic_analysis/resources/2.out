@@ -13,20 +13,14 @@ INT int
 ID c
 RPAREN )
 LBRACE {
-dcls dcls dcl BECOMES NUM SEMI
 dcls .EMPTY
-dcl type ID
-type INT
-INT int
-ID a
-BECOMES =
-NUM 1
-SEMI ;
 statements .EMPTY
 RETURN return
 expr term
 term factor
-factor ID
+factor AMP lvalue
+AMP &
+lvalue ID
 ID c
 SEMI ;
 RBRACE }
@@ -51,8 +45,8 @@ statements .EMPTY
 RETURN return
 expr term
 term factor
-factor NUM
-NUM 1
+factor ID
+ID c
 SEMI ;
 RBRACE }
 EOF EOF

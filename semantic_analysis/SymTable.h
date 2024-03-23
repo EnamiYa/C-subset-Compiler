@@ -86,7 +86,6 @@ void getVars(Node *n, map<string, TYPES_WLP4> &vars, vector<TYPES_WLP4> &params,
         vars[name] = type;
     }
 
-    // else if (n->getLHS() == "dcls" || n->getLHS() == "params" || n->getLHS() == "paramlist")
     else
     {
         for (const auto &c : n->children)
