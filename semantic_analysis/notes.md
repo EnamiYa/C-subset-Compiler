@@ -33,7 +33,7 @@
         - node.rule == dcl type ID <=> declaration found
 
     3. Type Checking
-        - Recursive type inference ALGO: postorder?
+        - Recursive type inference ALGO: postorder
             - get statement type -> get expressions type
         - store type info if not violated in exp nodes as we recurse
 

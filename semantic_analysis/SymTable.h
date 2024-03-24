@@ -56,7 +56,7 @@ void checkProcCalls(Node *n, const map<string, Procedure> &symTable)
             throw SEMANTIC_ANALYSIS_ERROR{"Call of undeclared procedure: " + name};
 
         //* called correctly
-        
+
     }
     else
     {
