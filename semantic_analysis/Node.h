@@ -46,11 +46,6 @@ struct Node
 
     string getLHS() const
     {
-        // if (isTerm)
-        // {
-        //     printf("NODE %s %s MUST BE NON TERMINAL\n", this->kind.c_str(), this->lexeme.c_str());
-        // }
-        // assert(!isTerm && "must be non terminal");
         return strToPairRule(rule).first;
     }
 
@@ -151,12 +146,36 @@ Node *rebuildTree(istream &cin)
     return root;
 }
 
+string printType(Node *n)
+{
+    // assert((n->type != TYPES_WLP4::NA) and "node n is an expression and must have a type, but it doesn't!");
+
+    string ans = "";
+    if (n->type == TYPES_WLP4::INT)
+    {
+        ans = "int";
+    }
+    else if (n->type == TYPES_WLP4::PTR)
+    {
+        ans = "int*";
+    }
+    return ans;
+}
+
+bool isExpNode(Node *n)
+{
+    if (n->isTerm)
+        return (n->kind == NUM || n->kind == NULL_STR || n->kind == ID);
+
+    string lhs = strToPairRule(n->rule).first;
+    return (lhs == "expr" || lhs == "lvalue" || lhs == "term" || lhs == "factor");
+}
+
 void printTree(Node *n)
 {
     if (n->isTerm)
     {
-        printf("%s %s\n", n->kind.c_str(), n->lexeme.c_str());
-        return;
+        printf("%s %s", n->kind.c_str(), n->lexeme.c_str());
     }
     else
     {
@@ -169,9 +188,17 @@ void printTree(Node *n)
         {
             cout << " " << rhs;
         }
-
-        cout << endl;
     }
+
+    if (isExpNode(n))
+    {
+        cout << " : " << printType(n);
+    }
+
+    cout << endl;
+
+    if (n->isTerm)
+        return;
 
     for (const auto &child : n->children)
         printTree(child);

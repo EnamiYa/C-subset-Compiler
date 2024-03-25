@@ -6,6 +6,7 @@
 #include "helpers.h"
 #include "SymTable.h"
 #include "Node.h"
+#include "TypeChecking.h"
 
 using namespace std;
 bool db = 1;
@@ -17,13 +18,11 @@ void debugST(const map<string, Procedure> &ST)
     for (const auto &[proc, localST] : ST)
     {
         map<string, TYPES_WLP4> vars = localST.vars;
-        printf("LOCAL SYMBOL TABLE IS EMPTY = ");
-        cout << boolalpha << vars.empty() << endl;
 
         printf("Procedure %s has local ST: \n", proc.c_str());
         for (const auto &[s, type] : vars)
         {
-            printf("Var: %s Type: %s\n", s.c_str(), typeToStr(type).c_str());
+            printf("%s %s\n", typeToStr(type).c_str(), s.c_str());
         }
     }
     printf("_________________\n");
@@ -32,13 +31,13 @@ void debugST(const map<string, Procedure> &ST)
 int main()
 {
     Node *root = rebuildTree(cin);
-    printTree(root);
-    // printf("ROOT IS: %s\n", root->rule.c_str());
     map<string, Procedure> ST;
 
     try
     {
         getGlobalST(root, ST);
+        isWellTyped(root, "", ST);
+
         if (db and dbST)
             debugST(ST);
     }
@@ -47,6 +46,7 @@ int main()
     {
         if (db and dbST)
             debugST(ST);
+        printTree(root);
 
         cerr << err.what();
 
@@ -54,6 +54,7 @@ int main()
         return 0;
     }
 
+    printTree(root);
     printf("SUCCESS!\n");
 
     freeNodes(root);

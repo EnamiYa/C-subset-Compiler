@@ -1,5 +1,8 @@
 # TODO NEXT:
-- finish type checking
+- check I am infering all possible expressions
+- test all well typed cases
+- type inference for params and dcls' terminal children!!
+- ID nodes don't get their types set to int
 - check exns free memo correctly
 - check if I leak memo valgrind
 - catch f(int c) { return &c; } - not well typed

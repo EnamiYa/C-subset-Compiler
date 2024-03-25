@@ -78,6 +78,7 @@ void getVars(Node *n, map<string, TYPES_WLP4> &vars, vector<TYPES_WLP4> &params,
         // TODO TEST that I AM ACCESSING STUFF PROPERLY
         TYPES_WLP4 type = (n->children[0]->children.size() == 1) ? TYPES_WLP4::INT : TYPES_WLP4::PTR;
         string name = n->children[1]->lexeme;
+        n->children.at(1)->type = type;
 
         if (p)
         {
@@ -167,7 +168,6 @@ void getGlobalST(Node *root, map<string, Procedure> &symTable)
     {
         return; // todo test - just recurse to be safe
     }
-    // todo 5. check fn calls
 }
 
 #endif
