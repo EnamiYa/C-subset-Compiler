@@ -1,4 +1,5 @@
 int wain(int* a, int b) {
     int c = 1;
+    int e = 1;
     return 1;
 }

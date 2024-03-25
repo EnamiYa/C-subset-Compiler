@@ -1,7 +1,8 @@
 # TODO NEXT:
+- WTF is the seg fault - not in student env!
 - lvalue STAR factor rule in inferType
 - multiple dcls => out_of_range
-- fix seg fault: WHEN multiple dcls and statements
+- fix seg fault (loacated at line 350 TypeChecking): WHEN multiple dcls and statements
 EX1:
 int wain(int* a, int b) {
     b = 3;
@@ -10,7 +11,7 @@ int wain(int* a, int b) {
 }
 EX2:
 int wain(int* a, int b) {
-    int* c = 1;
+    int c = 1;
     int e = 1;
     return 1;
 }

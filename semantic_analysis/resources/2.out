@@ -18,11 +18,19 @@ ID b
 RPAREN )
 LBRACE {
 dcls dcls dcl BECOMES NUM SEMI
+dcls dcls dcl BECOMES NUM SEMI
 dcls .EMPTY
 dcl type ID
 type INT
 INT int
 ID c
+BECOMES =
+NUM 1
+SEMI ;
+dcl type ID
+type INT
+INT int
+ID e
 BECOMES =
 NUM 1
 SEMI ;

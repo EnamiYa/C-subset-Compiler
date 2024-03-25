@@ -347,11 +347,13 @@ void isWellTyped(Node *n, const string &curProc, const map<string, Procedure> &s
     else if (n->rule == "dcls dcls dcl BECOMES NUM SEMI")
     {
         // dcl -> type ID - type -> INT
-        if (n->children.at(1)->children.front()->rule == "type INT STAR")
-        {
-            throw SEMANTIC_ANALYSIS_ERROR{"Wrong Declaration, a ptr variable must be initialized to NULL, not INT"};
-        }
-        n->children[3]->type = TYPES_WLP4::INT;
+        //! SEG FAULT HAPPENS HERE!
+        // if (n->children.at(1)->children.front()->rule == "type INT STAR")
+        // {
+        //     throw SEMANTIC_ANALYSIS_ERROR{"Wrong Declaration, a ptr variable must be initialized to NULL, not INT"};
+        // }
+        // n->children[3]->type = TYPES_WLP4::INT;
+        //! SEG FAULT HAPPENS HERE!
 
         isWellTyped(n->children.at(0), curProc, symTable);
     }
@@ -380,7 +382,6 @@ void isWellTyped(Node *n, const string &curProc, const map<string, Procedure> &s
     //  procedure INT ID LPAREN params RPAREN LBRACE dcls statements RETURN expr SEMI RBRACE
     else if (strToPairRule(n->rule).first == "procedure")
     {
-
         string procName = n->children.at(1)->lexeme;
         isWellTyped(n->children.at(6), procName, symTable); // dcls
         isWellTyped(n->children.at(7), procName, symTable); // statements
@@ -398,6 +399,8 @@ void isWellTyped(Node *n, const string &curProc, const map<string, Procedure> &s
         {
             throw SEMANTIC_ANALYSIS_ERROR{"Wain's second parameter is not INT"};
         }
+        assert(strToPairRule(n->children.at(8)->rule).first == "dcls");
+        assert(strToPairRule(n->children.at(9)->rule).first == "statements");
 
         isWellTyped(n->children.at(8), "wain", symTable); // dcls
         isWellTyped(n->children.at(9), "wain", symTable); // statements
