@@ -1,8 +1,4 @@
-int f(int a) {
-    return 1;
-}
-
 int wain(int* a, int b) {
-    int* c = NULL;
-    return f(1, 2, 3);
+    int c = 1;
+    return 1;
 }

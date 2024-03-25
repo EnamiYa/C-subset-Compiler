@@ -1,6 +1,14 @@
 # TODO NEXT:
+- lvalue STAR factor rule in inferType
 - multiple dcls => out_of_range
-- fix seg fault:
+- fix seg fault: WHEN multiple dcls and statements
+EX1:
+int wain(int* a, int b) {
+    b = 3;
+    b = 4;
+    return *a;
+}
+EX2:
 int wain(int* a, int b) {
     int* c = 1;
     int e = 1;
