@@ -6,18 +6,11 @@ INT int
 ID f
 LPAREN (
 params paramlist
-paramlist dcl COMMA paramlist
-dcl type ID
-type INT STAR
-INT int
-STAR *
-ID c
-COMMA ,
 paramlist dcl
 dcl type ID
 type INT
 INT int
-ID d
+ID a
 RPAREN )
 LBRACE {
 dcls .EMPTY
@@ -25,8 +18,8 @@ statements .EMPTY
 RETURN return
 expr term
 term factor
-factor ID
-ID c
+factor NUM
+NUM 1
 SEMI ;
 RBRACE }
 procedures main
@@ -35,8 +28,9 @@ INT int
 WAIN wain
 LPAREN (
 dcl type ID
-type INT
+type INT STAR
 INT int
+STAR *
 ID a
 COMMA ,
 dcl type ID
@@ -45,21 +39,41 @@ INT int
 ID b
 RPAREN )
 LBRACE {
-dcls dcls dcl BECOMES NUM SEMI
+dcls dcls dcl BECOMES NULL SEMI
 dcls .EMPTY
 dcl type ID
-type INT
+type INT STAR
 INT int
+STAR *
 ID c
 BECOMES =
-NUM 1
+NULL NULL
 SEMI ;
 statements .EMPTY
 RETURN return
 expr term
 term factor
-factor ID
-ID c
+factor ID LPAREN arglist RPAREN
+ID f
+LPAREN (
+arglist expr COMMA arglist
+expr term
+term factor
+factor NUM
+NUM 1
+COMMA ,
+arglist expr COMMA arglist
+expr term
+term factor
+factor NUM
+NUM 2
+COMMA ,
+arglist expr
+expr term
+term factor
+factor NUM
+NUM 3
+RPAREN )
 SEMI ;
 RBRACE }
 EOF EOF

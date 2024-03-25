@@ -1,8 +1,16 @@
 # TODO NEXT:
+- multiple dcls => out_of_range
+- fix seg fault:
+int wain(int* a, int b) {
+    int* c = 1;
+    int e = 1;
+    return 1;
+}
+- test &E dereference
+- check my inferType cases are correct
 - check I am infering all possible expressions
 - test all well typed cases
-- type inference for params and dcls' terminal children!!
-- ID nodes don't get their types set to int
+
 - check exns free memo correctly
 - check if I leak memo valgrind
 - catch f(int c) { return &c; } - not well typed

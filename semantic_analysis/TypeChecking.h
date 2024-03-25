@@ -63,10 +63,11 @@ void isProcCallValid(Node *n, string curProc, const map<string, Procedure> &symT
     assert(n and !n->isTerm);
 
     //* 1. check correct # args
+    string name = n->children.front()->lexeme;
 
-    if (n->rule == "factor ID LPAREN RPAREN" and !symTable.at(curProc).params.empty())
+    if (n->rule == "factor ID LPAREN RPAREN" and !symTable.at(name).params.empty())
     {
-        throw SEMANTIC_ANALYSIS_ERROR{"Procedure Called with wrong # arguments - Details: Expects " + to_string(symTable.at(curProc).params.size()) + " - Was called with NONE"};
+        throw SEMANTIC_ANALYSIS_ERROR{"Procedure Called with wrong # arguments - Details: Expects " + to_string(symTable.at(name).params.size()) + " - Was called with NONE"};
     }
 
     auto tmp = n->children[2]; // arglist
@@ -77,13 +78,12 @@ void isProcCallValid(Node *n, string curProc, const map<string, Procedure> &symT
         tmp = tmp->children[2];
     }
 
-    if (symTable.at(curProc).params.size() != count)
+    if (symTable.at(name).params.size() != count)
     {
-        throw SEMANTIC_ANALYSIS_ERROR{"Procedure Called with wrong # arguments - Details: Expects " + to_string(symTable.at(curProc).params.size()) + " - Was called with " + to_string(count)};
+        throw SEMANTIC_ANALYSIS_ERROR{"Procedure Called with wrong # arguments - Details: Expects " + to_string(symTable.at(name).params.size()) + " - Was called with " + to_string(count)};
     }
 
     // * 2. check types of args match fn declaration
-
     // infer type of each arg
     tmp = n->children[2]; // arglist
     int argOrder = 0;
@@ -123,33 +123,48 @@ TYPES_WLP4 inferType(Node *n, const string &curProc, const map<string, Procedure
         }
         else if (token == NULL_STR)
         {
-
             n->type = TYPES_WLP4::PTR;
         }
         else if (token == ID)
         {
-            cout << "I AM INSIDE ID CHECK" << endl;
             n->type = symTable.at(curProc).vars.at(n->lexeme);
         }
     }
     else
     {
         // E: INT => &E: PTR
-        if (n->rule == "factor AMP lvalue" and n->children[1]->rule == "lvalue STAR factor" and n->children[1]->children[1]->rule == "factor NUM")
+        //! TEST
+        if (n->rule == "factor AMP lvalue" and n->children.at(1)->rule == "lvalue ID")
         {
-            setSubtreeTypes(n, {1, 1}, false);
+            auto t = inferType(n->children.at(1), curProc, symTable);
+            if (t != TYPES_WLP4::INT)
+            {
+                throw SEMANTIC_ANALYSIS_ERROR{"The dereferenced expression is NOT an int!"};
+            }
+            n->type = TYPES_WLP4::PTR;
         }
 
         // E:PTR => *E: INT
-        else if (n->rule == "factor STAR factor" and n->children[1]->rule == "factor NUM")
+        else if (n->rule == "factor STAR factor" and n->children[1]->rule == "factor ID")
         {
-            setSubtreeTypes(n, {1});
+            auto t = inferType(n->children[1], curProc, symTable);
+            if (t != TYPES_WLP4::PTR)
+            {
+                throw SEMANTIC_ANALYSIS_ERROR{"The dereferenced expression is NOT an int!"};
+            }
+            n->type = TYPES_WLP4::INT;
         }
 
         // E:INT => NEW INT[E]: PTR
         else if (n->rule == "factor NEW INT LBRACK expr RBRACK" and n->children[3]->rule == "expr term" and n->children[3]->children[0]->rule == "term factor" and n->children[3]->children[0]->children[0]->rule == "factor NUM")
         {
-            setSubtreeTypes(n, {3, 0, 0}, false);
+            auto t = inferType(n->children[3], curProc, symTable);
+            if (t != TYPES_WLP4::INT)
+            {
+                throw SEMANTIC_ANALYSIS_ERROR{"NEW int[E] takes an int value"};
+            }
+            setSubtreeTypes(n, {3, 0, 0}, true);
+            n->type = TYPES_WLP4::PTR;
         }
 
         else if (n->rule == "expr expr PLUS term" || n->rule == "expr expr MINUS term" || n->rule == "term term STAR factor" || n->rule == "term term SLASH factor" || n->rule == "term term PCT factor")
@@ -182,36 +197,40 @@ TYPES_WLP4 inferType(Node *n, const string &curProc, const map<string, Procedure
                 n->type = TYPES_WLP4::INT;
             }
         }
+
         //* procedure call - NOT DECLARATION
         else if (string rl = n->rule; rl == "factor ID LPAREN RPAREN" || rl == "factor ID LPAREN arglist RPAREN")
         {
-            // todo
             isProcCallValid(n, curProc, symTable); //! throws
             n->type = TYPES_WLP4::INT;
         }
-
         else if (string rl = n->rule; rl == "expr term" || rl == "term factor")
         {
             auto type = inferType(n->children.front(), curProc, symTable);
             setSubtreeTypes(n, {0}, isINT(type));
         }
-        else if (rl == "factor NUM")
+        else if (string rl = n->rule; rl == "factor NUM")
         {
             n->type = TYPES_WLP4::INT;
             inferType(n->children.front(), curProc, symTable);
         }
         //! TODO TEST
-        else if (rl == "factor ID")
+        else if (string rl = n->rule; rl == "factor ID" || rl == "lvalue ID")
         {
             n->type = inferType(n->children.front(), curProc, symTable);
         }
-        else if (rl == "factor NULL")
+        else if (string rl = n->rule; rl == "factor NULL")
         {
             n->type = TYPES_WLP4::PTR;
             inferType(n->children.front(), curProc, symTable);
         }
 
         else if (string rl = n->rule; rl == "factor LPAREN expr RPAREN" || rl == "lvalue LPAREN lvalue RPAREN")
+        {
+            auto type = inferType(n->children.at(1), curProc, symTable);
+            setSubtreeTypes(n, {1}, isINT(type));
+        }
+        else if (string rl = n->rule; rl == "lvalue STAR factor")
         {
             auto type = inferType(n->children.at(1), curProc, symTable);
             setSubtreeTypes(n, {1}, isINT(type));
@@ -332,6 +351,7 @@ void isWellTyped(Node *n, const string &curProc, const map<string, Procedure> &s
         {
             throw SEMANTIC_ANALYSIS_ERROR{"Wrong Declaration, a ptr variable must be initialized to NULL, not INT"};
         }
+        n->children[3]->type = TYPES_WLP4::INT;
 
         isWellTyped(n->children.at(0), curProc, symTable);
     }
@@ -343,6 +363,7 @@ void isWellTyped(Node *n, const string &curProc, const map<string, Procedure> &s
         {
             throw SEMANTIC_ANALYSIS_ERROR{"Wrong Declaration, an integer variable must be initialized to an INT, not NULL"};
         }
+        n->children[3]->type = TYPES_WLP4::PTR;
         isWellTyped(n->children.at(0), curProc, symTable);
     }
 
