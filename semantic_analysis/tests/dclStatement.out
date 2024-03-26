@@ -6,19 +6,37 @@ INT int
 WAIN wain
 LPAREN (
 dcl type ID
-type INT
-INT int
-ID a
-COMMA ,
-dcl type ID
 type INT STAR
 INT int
 STAR *
+ID a
+COMMA ,
+dcl type ID
+type INT
+INT int
 ID b
 RPAREN )
 LBRACE {
+dcls dcls dcl BECOMES NUM SEMI
 dcls .EMPTY
+dcl type ID
+type INT
+INT int
+ID c
+BECOMES =
+NUM 3
+SEMI ;
+statements statements statement
 statements .EMPTY
+statement PRINTLN LPAREN expr RPAREN SEMI
+PRINTLN println
+LPAREN (
+expr term
+term factor
+factor NUM
+NUM 1
+RPAREN )
+SEMI ;
 RETURN return
 expr term
 term factor

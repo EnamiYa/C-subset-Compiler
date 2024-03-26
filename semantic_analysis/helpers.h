@@ -1,12 +1,12 @@
 #ifndef HELPERS_H
 #define HELPERS_H
+
 #include <vector>
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <exception>
 #include <cassert>
-
 
 using namespace std;
 
@@ -87,8 +87,8 @@ auto getPairCFGRules(const string &fname, bool print = false)
     return rules;
 }
 
-vector<pair<string, vector<string>>> PAIR_CFG_RULES = getPairCFGRules("resources/wlp4.cfg", printPairRules);
-vector<string> STR_CFG_RULES = getStrCGFRules("resources/wlp4.cfg", printStrRules);
+vector<pair<string, vector<string>>> PAIR_CFG_RULES = getPairCFGRules("wlp4.cfg", printPairRules);
+vector<string> STR_CFG_RULES = getStrCGFRules("wlp4.cfg", printStrRules);
 
 const std::string ID = "ID";
 const std::string NUM = "NUM";

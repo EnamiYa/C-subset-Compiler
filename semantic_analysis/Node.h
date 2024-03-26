@@ -17,6 +17,8 @@
 
 using namespace std;
 
+bool debug = 0;
+
 const string UNINITIALIZED = "UNINITIALIZED";
 
 enum class TYPES_WLP4
@@ -25,6 +27,15 @@ enum class TYPES_WLP4
     PTR,
     NA
 };
+
+string typeToStrN(TYPES_WLP4 t)
+{
+    if (t == TYPES_WLP4::INT)
+        return "INT";
+    if (t == TYPES_WLP4::PTR)
+        return "INT STAR";
+    return "NO TYPE";
+}
 
 struct Node
 {
@@ -41,7 +52,7 @@ struct Node
     Node(const string &rule) : isTerm{false}, rule{rule} {}
     void addChild(Node *n)
     {
-        children.emplace_back(n);
+        children.push_back(n);
     }
 
     string getLHS() const
@@ -69,6 +80,14 @@ Node *buildNode(const string &s)
         string lexeme;
         iss >> lexeme;
         ans = new Node{read, lexeme};
+        if (read == NUM)
+        {
+            ans->type = TYPES_WLP4::INT;
+        }
+        else if (read == NULL_STR)
+        {
+            ans->type = TYPES_WLP4::PTR;
+        }
     }
     else
     {
@@ -91,7 +110,7 @@ bool isChild(Node *ch, Node *p)
     vector<string> parentRHS = strToPairRule(p->rule).second;
 
     //* 3. search if child is derived from parent
-    return find(parentRHS.begin(), parentRHS.end(), lhs) != parentRHS.end();
+    return (find(parentRHS.begin(), parentRHS.end(), lhs) != parentRHS.end()) and p->children.size() < strToPairRule(p->rule).second.size();
 }
 
 Node *rebuildTreeHelper(vector<Node *> preorder)
@@ -115,7 +134,8 @@ Node *rebuildTreeHelper(vector<Node *> preorder)
         {
             // Update the parent to the current node
             auto parent = stk.top();
-            parent->addChild(cur);
+            // parent->addChild(cur);
+            parent->children.push_back(cur);
         }
 
         stk.push(cur);
@@ -148,14 +168,12 @@ Node *rebuildTree(istream &cin)
 
 string printType(Node *n)
 {
-    // assert((n->type != TYPES_WLP4::NA) and "node n is an expression and must have a type, but it doesn't!");
-
     string ans = "";
     if (n->type == TYPES_WLP4::INT)
     {
         ans = "int";
     }
-    else if (n->type == TYPES_WLP4::PTR)
+    else if (n->type == TYPES_WLP4::PTR || n->kind == "NULL")
     {
         ans = "int*";
     }
@@ -171,53 +189,17 @@ bool isExpNode(Node *n)
     return (lhs == "expr" || lhs == "lvalue" || lhs == "term" || lhs == "factor");
 }
 
-void printTree(Node *n)
-{
-    if (n->isTerm)
-    {
-        printf("%s %s", n->kind.c_str(), n->lexeme.c_str());
-    }
-    else
-    {
-        // todo test
-        assert(n->rule != UNINITIALIZED);
-        auto pr = strToPairRule(n->rule);
-        cout << pr.first;
-
-        for (const auto &rhs : pr.second)
-        {
-            cout << " " << rhs;
-        }
-    }
-
-    if (isExpNode(n))
-    {
-        cout << " : " << printType(n);
-    }
-
-    cout << endl;
-
-    if (n->isTerm)
-        return;
-
-    for (const auto &child : n->children)
-        printTree(child);
-}
-
 void freeNodes(Node *node)
 {
     if (node == nullptr)
     {
         return; // Base case: If node is nullptr, return
     }
-
-    // Recursively deallocate children nodes
     for (Node *child : node->children)
     {
         freeNodes(child);
     }
 
-    // Deallocate the current node
     delete node;
 }
 

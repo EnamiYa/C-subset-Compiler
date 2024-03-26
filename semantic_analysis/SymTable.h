@@ -8,8 +8,6 @@
 
 using namespace std;
 
-// todo check that exns are not leaking memo
-
 struct Procedure
 {
     vector<TYPES_WLP4> params;
@@ -24,7 +22,6 @@ string typeToStr(TYPES_WLP4 t)
         return "INT STAR";
     return "NO TYPE";
 }
-
 
 //! throws
 void checkVarUses(Node *n, const map<string, TYPES_WLP4> &vars)
@@ -56,7 +53,6 @@ void checkProcCalls(Node *n, const map<string, Procedure> &symTable)
             throw SEMANTIC_ANALYSIS_ERROR{"Call of undeclared procedure: " + name};
 
         //* called correctly
-
     }
     else
     {
@@ -78,6 +74,7 @@ void getVars(Node *n, map<string, TYPES_WLP4> &vars, vector<TYPES_WLP4> &params,
         // TODO TEST that I AM ACCESSING STUFF PROPERLY
         TYPES_WLP4 type = (n->children[0]->children.size() == 1) ? TYPES_WLP4::INT : TYPES_WLP4::PTR;
         string name = n->children[1]->lexeme;
+
         n->children.at(1)->type = type;
 
         if (p)

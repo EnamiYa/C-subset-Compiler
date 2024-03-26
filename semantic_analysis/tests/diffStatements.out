@@ -17,24 +17,28 @@ INT int
 ID b
 RPAREN )
 LBRACE {
-dcls dcls dcl BECOMES NUM SEMI
-dcls dcls dcl BECOMES NUM SEMI
 dcls .EMPTY
-dcl type ID
-type INT
-INT int
-ID c
-BECOMES =
-NUM 1
-SEMI ;
-dcl type ID
-type INT
-INT int
-ID e
-BECOMES =
-NUM 1
-SEMI ;
+statements statements statement
+statements statements statement
 statements .EMPTY
+statement lvalue BECOMES expr SEMI
+lvalue ID
+ID a
+BECOMES =
+expr term
+term factor
+factor NUM
+NUM 3
+SEMI ;
+statement PRINTLN LPAREN expr RPAREN SEMI
+PRINTLN println
+LPAREN (
+expr term
+term factor
+factor NUM
+NUM 1
+RPAREN )
+SEMI ;
 RETURN return
 expr term
 term factor
