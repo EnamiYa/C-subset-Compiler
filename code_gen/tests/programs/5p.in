@@ -1,0 +1,5 @@
+int f() { 
+  int* num = NULL;
+  return *num; 
+}
+int wain(int a, int b) { return f(); }

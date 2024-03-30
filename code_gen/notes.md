@@ -1,11 +1,14 @@
 # To Do
+
 - test:
-    - build tree w/ types
-    - sym table type extraction + offset
+  - build tree w/ types - done
+  - \# children is correct in nodes - done
+  - sym table type extraction + offset - done
 - maybe delete the params field in Procedure class
 - remove unused includes
 
 # Questions
+
 - will fp start from 0 work with procedures taking 0 args too
 
 # Plan
@@ -14,9 +17,11 @@ input: wlp4 typed parse tree
 output: mips assembly
 
 ## P1
-- rebuild parse tree
+- rebuild parse tree - done
+- extend ST with offset from frame pointer - done
+
+Code gen:
 - store vars in stack
-- extend ST with offset from frame pointer
 - include comments in generated asm for debug
 
 ## P2
@@ -39,5 +44,6 @@ $30: stack pointer
 $31: return address
 
 #### expression nodes
+
 - T: NUM, NULL or ID tokens
 - NT: LHS of rule is: expr, term, factor, or lvalue

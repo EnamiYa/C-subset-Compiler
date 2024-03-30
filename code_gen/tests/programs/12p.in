@@ -1,0 +1,8 @@
+int wain(int a, int b) { 
+  int* list = NULL;
+  int meow = 241;
+  int* null = NULL;
+  int* ptr = NULL;
+  int var = 142;
+  return meow; 
+}

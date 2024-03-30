@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <stack>
 #include <string>
-#include <helpers.h>
+#include "helpers.h"
 
 using namespace std;
 
@@ -74,11 +74,20 @@ Node *buildNode(const string &s)
     }
     else
     {
-        ans = new Node{s};
+        string tmp;
+        istringstream iss{s};
+        string rl = "";
+
+        iss >> tmp; rl = rl + tmp;
+        while (iss >> tmp and tmp != ":") {
+            rl = rl + " " + tmp;
+        }
+        ans = new Node{rl};
     }
-    
-    if (s.find(':') != string::npos) {
-        ans->type = s.find("int") != string::npos ? TYPES_WLP4::INT : TYPES_WLP4::PTR;
+
+    if (s.find(':') != string::npos)
+    {
+        ans->type = s.find("int*") != string::npos ? TYPES_WLP4::PTR : TYPES_WLP4::INT;
     }
 
     return ans;
@@ -150,6 +159,34 @@ Node *rebuildTree(istream &cin)
     //* 2. link Nodes to form Tree
     auto root = rebuildTreeHelper(preorder);
     return root;
+}
+
+string printType(Node *n)
+{
+    string ans = "";
+    if (n->type == TYPES_WLP4::INT)
+    {
+        ans = "int";
+    }
+    else if (n->type == TYPES_WLP4::PTR || n->kind == "NULL")
+    {
+        ans = "int*";
+    }
+    return ans;
+}
+
+void freeNodes(Node *node)
+{
+    if (node == nullptr)
+    {
+        return; // Base case: If node is nullptr, return
+    }
+    for (Node *child : node->children)
+    {
+        freeNodes(child);
+    }
+
+    delete node;
 }
 
 #endif

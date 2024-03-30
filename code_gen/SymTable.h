@@ -19,6 +19,31 @@ struct Procedure
     }
 };
 
+string typeToStr(TYPES_WLP4 t)
+{
+    if (t == TYPES_WLP4::INT)
+        return "INT";
+    if (t == TYPES_WLP4::PTR)
+        return "INT STAR";
+    return "NO TYPE";
+}
+
+void debugST(const map<string, Procedure> &ST)
+{
+    printf("_________________\n");
+    for (const auto &[proc, localST] : ST)
+    {
+        map<string, pair<TYPES_WLP4, int>> vars = localST.vars;
+
+        printf("Procedure %s has local ST: \n", proc.c_str());
+        for (const auto &[s, p] : vars)
+        {
+            printf("%s %s %d\n", s.c_str(), typeToStr(p.first).c_str(), p.second);
+        }
+    }
+    printf("_________________\n");
+}
+
 // todo test
 void getVars(Node *n, map<string, pair<TYPES_WLP4, int>> &vars, vector<TYPES_WLP4> &params, int &fp, bool p)
 {

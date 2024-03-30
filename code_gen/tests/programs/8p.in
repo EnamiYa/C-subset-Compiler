@@ -1,0 +1,11 @@
+int p() { return 200; }
+int q() { return 40; }
+int r() { return 1; }
+int one(int n) { return 1; }
+int two(int d1, int d2) { return 2; }
+int three(int a, int b, int c) {
+  return 3;
+}
+int wain(int a, int b) {
+  return two(three(p(),one(q()),r()), 0);
+}

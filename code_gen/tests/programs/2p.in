@@ -1,0 +1,11 @@
+int wain(int* a, int b) {
+  if(a == NULL) {
+    while(b != 241) {
+      println(b);  
+      b = 241;
+    }
+  } else {
+    delete [] a;
+  }
+  return 0;
+}
