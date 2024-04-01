@@ -1,18 +1,18 @@
 # To Do
-
 - test:
   - build tree w/ types - done
   - \# children is correct in nodes - done
   - sym table type extraction + offset - done
+
+- code gen
 - maybe delete the params field in Procedure class
 - remove unused includes
 
 # Questions
-
+- how to evaluate expr in order priority if ()
 - will fp start from 0 work with procedures taking 0 args too
 
 # Plan
-
 input: wlp4 typed parse tree
 output: mips assembly
 
@@ -33,7 +33,6 @@ Code gen:
 ## P5
 
 # Conventions
-
 $1 and $2: wain inputs
 $3: return value of wain
 $4: value 4
