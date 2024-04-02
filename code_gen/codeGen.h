@@ -23,7 +23,6 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg
 
     if (n->getLHS() == "factor")
     {
-        // printf("RHS OF FACTOR IS: %s\n", n->getRHSVector().front().c_str());
         auto rhs = n->getRHSVector().front();
         if (rhs == NUM)
         {
@@ -49,6 +48,64 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg
             assert(exprNode->getLHS() == "expr");
 
             evalExpr(exprNode, sp, ST, reg);
+        }
+    }
+    else if (n->rule == "expr expr PLUS term" || n->rule == "expr expr MINUS term")
+    {
+        evalExpr(n->children[0], sp, ST, reg);
+        push(3, sp);
+        evalExpr(n->children[2], sp, ST, reg);
+        pop(5, sp);
+        if (string rl = n->rule; rl.find("PLUS") != string::npos)
+        {
+            cmt("addition");
+            _add(3, 5, 3);
+        }
+        else
+        {
+            cmt("subtraction");
+            _sub(3, 5, 3);
+        }
+    }
+    else if (n->getLHS() == "term")
+    {
+        if (n->rule == "term factor")
+        {
+            assert(n->children[0]->getLHS() == "factor");
+            evalExpr(n->children[0], sp, ST, reg);
+        }
+
+        //* term -> term (STAR|SLASH|PCT) factor
+        else if (n->children[0]->getLHS() == "term" and n->children[2]->getLHS() == "factor")
+        {
+            evalExpr(n->children[0], sp, ST, reg);
+            push(3, sp);
+            evalExpr(n->children[2], sp, ST, reg);
+            pop(5, sp);
+
+            auto op = n->children[1];
+            if (op->kind == STAR)
+            {
+                cmt("multiplication");
+                _mult(5, 3);
+                _mflo(3);
+            }
+            else if (op->kind == SLASH)
+            {
+                cmt("division");
+                _div(5, 3);
+                _mflo(3);
+            }
+            else if (op->kind == PCT)
+            {
+                cmt("modulo");
+                _div(5, 3);
+                _mfhi(3);
+            }
+            else
+            {
+                assert(false and "operation MUST be one of (STAR|SLASH|PCT)\n");
+            }
         }
     }
     else

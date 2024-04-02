@@ -1,8 +1,4 @@
 # To Do
-- dcls
-- assignment statements
-
-
 
 
 ## old
@@ -22,21 +18,12 @@
 input: wlp4 typed parse tree
 output: mips assembly
 
-## P1
 - rebuild parse tree - done
 - extend ST with offset from frame pointer - done
 
 Code gen:
 - store vars in stack
 - include comments in generated asm for debug
-
-## P2
-
-## P3
-
-## P4
-
-## P5
 
 # Conventions
 $1 and $2: wain inputs

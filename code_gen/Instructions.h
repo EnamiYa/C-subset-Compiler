@@ -230,6 +230,7 @@ void push(const int &reg, int &sp)
 
 void pop(const int &reg, int &sp)
 {
+    printf("; pop from stack\n");
     sp = sp + 4;
     _add(30, 30, 4);
     _lw(reg, -4, 30);
