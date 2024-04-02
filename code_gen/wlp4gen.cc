@@ -10,9 +10,9 @@
 using namespace std;
 
 bool db = 0;
-bool pTree = 1;
-bool pChildren = 1;
-bool pST = 0;
+bool pTree = 0;
+bool pChildren = 0;
+bool pST = 1;
 
 bool isProc(Node *n, const map<string, Procedure> &ST, string curProc)
 {
@@ -94,6 +94,7 @@ int main()
     map<string, Procedure> ST;
 
     getGlobalST(root, ST);
+
     int sp = 0;
     genCode(root, ST, sp);
 

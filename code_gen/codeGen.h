@@ -7,6 +7,9 @@
 
 using namespace std;
 
+bool dbCG = 0;
+bool a7CG = 1;
+
 void loadVarIntoReg(const string &var, const string &curProc, const map<string, Procedure> &ST, const int &reg = 3)
 {
     int offset = ST.at(curProc).getOffset(var);
@@ -57,6 +60,107 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg
     }
 }
 
+// todo A8 dcls dcls dcl BECOMES NULL SEMI
+void genDcls(Node *c, const map<string, Procedure> &ST, int &sp)
+{
+    if (c->isTerm)
+        return;
+
+    if (c->rule == "dcls .EMPTY")
+        return;
+
+    //! which order to push dcls to match symbol table offsets
+    if (c->rule == "dcls dcls dcl BECOMES NUM SEMI")
+    {
+        genDcls(c->children.front(), ST, sp); // dcls
+
+        //! symbol table already prebuilt
+
+        auto num = c->children[3];
+        assert(num->isTerm and num->kind == NUM);
+
+        //? MAIN LOGIC
+        cmt("push dcl to stack");
+        lis_word(5, stoi(num->lexeme)); // store constant in temp
+        push(5, sp);                    // push result to stack
+
+        auto id = c->children[1]->children[1];
+        assert(id->isTerm and id->kind == ID);
+
+        // check symbol table offset in sync with produced assembly
+        //! WARNING only works when program has ONLY wain procedure
+        if (dbCG and a7CG)
+        {
+            assert(sp == (ST.at("wain").getOffset(id->lexeme) - 4));
+        }
+    }
+    else if (c->rule == "dcls dcls dcl BECOMES NUM SEMI")
+    {
+        printf("TO DO A8 WITH dcls NULL!!\n");
+    }
+    else
+    {
+        return;
+    }
+}
+
+// todo a8
+string getLvalueIDLexeme(Node *n)
+{
+    if (n->isTerm)
+        return "";
+
+    if (n->rule == "lvalue ID")
+    {
+        assert(n->children.front()->kind == ID);
+        return n->children.front()->lexeme;
+    }
+    else if (n->rule == "lvalue STAR factor")
+    {
+        // todo A8
+    }
+    else if (n->rule == "lvalue LPAREN lvalue RPAREN")
+    {
+        assert(n->children[1]->getLHS() == "lvalue");
+        return getLvalueIDLexeme(n->children[1]);
+    }
+    return "";
+}
+
+// todo p3-4-5?
+void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const string &curProc)
+{
+    if (n->isTerm || n->rule == "statements .EMPTY")
+        return;
+
+    if (n->getLHS() == "statements")
+    {
+        assert(n->children.front()->getLHS() == "statements");
+        genStatements(n->children.front(), ST, sp, curProc);
+        assert(n->children[1]->getLHS() == "statement");
+        genStatements(n->children[1], ST, sp, curProc);
+    }
+
+    //* if (n->getLHS() == "statement")
+    //* CASE 1: assignment
+    else if (n->rule == "statement lvalue BECOMES expr SEMI")
+    {
+        auto expr = n->children.at(2);
+        assert(expr->getLHS() == "expr");
+        auto lvalue = n->children.at(0);
+        assert(lvalue->getLHS() == "lvalue");
+
+        auto name = getLvalueIDLexeme(lvalue);
+        if (dbCG and name == "")
+            throw "THIS SHOULD NOT HAPPEN";
+
+        //? MAIN LOGIC
+        printf("; %s assignment\n", name.c_str());
+        evalExpr(expr, sp, ST);
+        _sw(3, ST.at(curProc).getOffset(name), 29);
+    }
+}
+
 //! update: a8 w/ procedures
 void genPrologue(Node *n, const map<string, Procedure> &ST, int &sp)
 {
@@ -90,16 +194,20 @@ void genPrologue(Node *n, const map<string, Procedure> &ST, int &sp)
 
             if (c->getLHS() == "dcls")
             {
-                // todo p2
+                genDcls(c, ST, sp);
             }
+
             else if (c->getLHS() == "statements")
             {
-                printf("; end prologue\n");
+                printf("; end prologue__________________\n");
+                genStatements(c, ST, sp, "wain");
                 // todo
             }
+
             //* return expr
             else if (c->getLHS() == "expr")
             {
+                cmt("wain return");
                 evalExpr(c, sp, ST); //* stores result in $3
                 return;
             }
@@ -117,7 +225,7 @@ void genPrologue(Node *n, const map<string, Procedure> &ST, int &sp)
 
 void genEpilogue(int oldSP, int curSP)
 {
-    printf("; begin epilogue\n");
+    printf("; begin epilogue__________________\n");
     while (curSP < oldSP)
     {
         _add(30, 30, 4);

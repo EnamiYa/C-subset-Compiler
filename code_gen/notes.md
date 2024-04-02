@@ -1,10 +1,16 @@
 # To Do
+- dcls
+- assignment statements
+
+
+
+
+## old
 - test:
   - build tree w/ types - done
   - \# children is correct in nodes - done
   - sym table type extraction + offset - done
 
-- code gen
 - maybe delete the params field in Procedure class
 - remove unused includes
 

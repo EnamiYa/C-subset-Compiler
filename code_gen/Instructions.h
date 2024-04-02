@@ -222,6 +222,7 @@ void lis_word(const int &d, const string &label)
 
 void push(const int &reg, int &sp)
 {
+    printf("; push to stack\n");
     _sw(reg, -4, 30);
     _sub(30, 30, 4);
     sp = sp - 4;
@@ -232,6 +233,10 @@ void pop(const int &reg, int &sp)
     sp = sp + 4;
     _add(30, 30, 4);
     _lw(reg, -4, 30);
+}
+
+void cmt(const string& s) {
+    printf("; %s\n", s.c_str());
 }
 
 #endif
