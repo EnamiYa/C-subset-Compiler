@@ -244,4 +244,8 @@ void labelUse(const string& s) {
     printf("%s:\n", s.c_str());
 }
 
+void _import(const string& s) {
+    printf(".import %s\n", s.c_str());
+}
+
 #endif

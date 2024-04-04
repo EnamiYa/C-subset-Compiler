@@ -12,6 +12,7 @@ bool dbCG = 0;
 bool a7CG = 1;
 bool _assert = 1;
 
+bool DID_IMPORT_PRINT = 0;
 int ELSE_LABEL_COUNTER = 0;
 int ENDIF_LABEL_COUNTER = 0;
 
@@ -354,6 +355,27 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
 
         cmt("WHILE statement end");
     }
+    else if (n->rule == "statement PRINTLN LPAREN expr RPAREN SEMI")
+    {
+        if (!DID_IMPORT_PRINT) {
+            _import("print");
+            DID_IMPORT_PRINT = 1;
+        }
+        
+        auto expr = n->children[2];
+        assert(expr->getLHS() == "expr");
+
+        cmt("PRINTLN start");
+        push(1, sp);
+        evalExpr(expr, sp, ST);
+        _add(1, 3, 0); // pass expr value to print in $1
+        push(31, sp);
+        lis_word(5, "print");
+        _jalr(5); // call print
+        pop(31, sp);
+        pop(1, sp);
+        cmt("PRINTLN end");
+    }
 }
 
 //! update: a8 w/ procedures
@@ -396,7 +418,6 @@ void genPrologue(Node *n, const map<string, Procedure> &ST, int &sp)
             {
                 printf("; end prologue__________________\n");
                 genStatements(c, ST, sp, "wain");
-                // todo
             }
 
             //* return expr
