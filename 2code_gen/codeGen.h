@@ -151,7 +151,7 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg
             evalExpr(c, sp, ST, reg);
         }
     }
-}
+} // end of evalExpr
 
 // todo A8 dcls dcls dcl BECOMES NULL SEMI
 void genDcls(Node *c, const map<string, Procedure> &ST, int &sp)
@@ -173,9 +173,9 @@ void genDcls(Node *c, const map<string, Procedure> &ST, int &sp)
         assert(num->isTerm and num->kind == NUM);
 
         //? MAIN LOGIC
-        cmt("push dcl to stack");
-        lis_word(5, stoi(num->lexeme)); // store constant in temp
-        push(5, sp);                    // push result to stack
+        cmt("push dcl to stack"); //! warning: does this work
+        lis_word(13, stoi(num->lexeme)); // store constant in temp
+        push(13, sp);                    // push result to stack
 
         auto id = c->children[1]->children[1];
         assert(id->isTerm and id->kind == ID);
@@ -195,7 +195,7 @@ void genDcls(Node *c, const map<string, Procedure> &ST, int &sp)
     {
         return;
     }
-}
+} // end of genDcls
 
 // todo a8
 string getLvalueIDLexeme(Node *n)
@@ -279,7 +279,7 @@ void genTest(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg 
         assert(false and "comp MUST be a comparison symbol");
     }
     cmt("test ends");
-}
+} // end of genTest
 
 // todo p3-4-5?
 void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const string &curProc)
@@ -330,9 +330,9 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
         _beq(3, 0, lbl1);
         genStatements(stmts1, ST, sp, curProc); //* recurse
         _beq(0, 0, lbl2);
-        labelUse(lbl1);
+        labelDef(lbl1);
         genStatements(stmts2, ST, sp, curProc);
-        labelUse(lbl2);
+        labelDef(lbl2);
 
         cmt("IF statement end");
     }
@@ -346,22 +346,23 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
         string lbl1 = genUniqueLabel("loop");
         string lbl2 = genUniqueLabel("endWhile");
 
-        labelUse(lbl1);
+        labelDef(lbl1);
         genTest(test, sp, ST);
         _beq(3, 0, lbl2); // check conditional
         genStatements(stmts, ST, sp, curProc);
         _beq(0, 0, lbl1); // loop back
-        labelUse(lbl2);
+        labelDef(lbl2);
 
         cmt("WHILE statement end");
     }
     else if (n->rule == "statement PRINTLN LPAREN expr RPAREN SEMI")
     {
-        if (!DID_IMPORT_PRINT) {
+        if (!DID_IMPORT_PRINT)
+        {
             _import("print");
             DID_IMPORT_PRINT = 1;
         }
-        
+
         auto expr = n->children[2];
         assert(expr->getLHS() == "expr");
 
@@ -376,24 +377,50 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
         pop(1, sp);
         cmt("PRINTLN end");
     }
+} // end of genStatements
+
+// todo support other procedures
+void genEpilogue(int &sp, const map<string, Procedure> &ST, const string &proc)
+{
+    int varCount = ST.at(proc).vars.size() - ST.at(proc).params.size();
+    // printf("PROCEDURE %s VAR COUNT = %d\n", proc.c_str(), varCount);
+    // printf("PROCEDURE %s: LOCAL VAR COUNT = %lu - PARAMS COUNT: %lu\n", proc.c_str(), ST.at(proc).vars.size(), ST.at(proc).params.size());
+
+    printf("; begin %s epilogue__________________\n", proc.c_str());
+    if (proc != "wain")
+    {
+        //? pop registers
+        pop(31, sp); // 7
+        pop(31, sp); // 6
+        pop(31, sp); // 5
+    }
+
+    //? pop local vars
+    // todo test
+    while (varCount-- > 0)
+    {
+        pop(31, sp);
+    }
+
+    _jr(31);
 }
 
-//! update: a8 w/ procedures
-void genPrologue(Node *n, const map<string, Procedure> &ST, int &sp)
+//* prologue + body
+void genProc(Node *n, const map<string, Procedure> &ST, int &sp, bool wainFirst)
 {
     if (n->isTerm)
         return;
 
     if (n->getLHS() == "procedures")
     {
-        genPrologue(n->children[0], ST, sp);
+        genProc(n->children[0], ST, sp, wainFirst);
         if (n->children.size() == 2)
         {
-            genPrologue(n->children[1], ST, sp);
+            genProc(n->children[1], ST, sp, wainFirst);
         }
     }
     // main → INT WAIN LPAREN dcl COMMA dcl RPAREN LBRACE dcls statements RETURN expr SEMI RBRACE
-    else if (n->getLHS() == "main")
+    else if (wainFirst and n->getLHS() == "main")
     {
         //? 1. setup frame pointer
         _sub(29, 30, 4);
@@ -428,36 +455,60 @@ void genPrologue(Node *n, const map<string, Procedure> &ST, int &sp)
                 return;
             }
         }
+        return;
     }
-    else if (n->getLHS() == "procedure")
+    // procedure → INT ID LPAREN params RPAREN LBRACE dcls statements RETURN expr SEMI RBRACE
+    else if (!wainFirst and n->getLHS() == "procedure")
     {
-        // todo A8
+        //? 1. label name
+        auto id = n->children[1];
+        assert(id->kind == ID);
+        labelDef(id->lexeme);
+
+        //? 2. setup frame pointer: 1st element pushed to stack frame
+        _sub(29, 30, 4);
+
+        //? 3. push dcls
+        auto dcls = n->children[6];
+        assert(dcls->getLHS() == "dcls");
+        genDcls(dcls, ST, sp);
+
+        //? 4. save registers - callee-save
+        push(5, sp);
+        push(6, sp);
+        push(7, sp);
+
+        //? 5. statements
+        printf("; end prologue__________________\n");
+        auto stmts = n->children[7];
+        assert(stmts->getLHS() == "statements");
+        genStatements(stmts, ST, sp, id->lexeme);
+
+        //? 6. return expr
+        auto retexpr = n->children[9];
+        assert(retexpr->getLHS() == "expr");
+        evalExpr(retexpr, sp, ST);
+
+        genEpilogue(sp, ST, id->lexeme);
     }
     else
     {
         return;
     }
-}
-
-void genEpilogue(int oldSP, int curSP)
-{
-    printf("; begin epilogue__________________\n");
-    while (curSP < oldSP)
-    {
-        _add(30, 30, 4);
-        curSP += 4;
-    }
-    _jr(31);
-}
+} // end of genPrologue
 
 void genCode(Node *n, const map<string, Procedure> &ST, int &sp)
 {
-    printf("; begin prologue\n");
+    printf("; wain prologue\n");
     lis_word(4, 4);
     lis_word(11, 1);
-    int oldSP = sp;
-    genPrologue(n, ST, sp);
-    genEpilogue(oldSP, sp);
+    // todo add wain init and stuff
+    // int oldSP = sp;
+    genProc(n, ST, sp, true); // wain first
+    genEpilogue(sp, ST, "wain");
+    genProc(n, ST, sp, false);       // not wain procedures
+    // printf("old sp = %d\n updated sp = %d\n", oldSP, sp);
+    // assert(oldSP == sp); //* wain $1 and $2 left in stack
 }
 
 #endif

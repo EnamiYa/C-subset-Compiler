@@ -240,7 +240,7 @@ void cmt(const string& s) {
     printf("; %s\n", s.c_str());
 }
 
-void labelUse(const string& s) {
+void labelDef(const string& s) {
     printf("%s:\n", s.c_str());
 }
 

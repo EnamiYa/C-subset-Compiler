@@ -329,9 +329,9 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
         _beq(3, 0, lbl1);
         genStatements(stmts1, ST, sp, curProc); //* recurse
         _beq(0, 0, lbl2);
-        labelUse(lbl1);
+        labelDef(lbl1);
         genStatements(stmts2, ST, sp, curProc);
-        labelUse(lbl2);
+        labelDef(lbl2);
 
         cmt("IF statement end");
     }
@@ -345,12 +345,12 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
         string lbl1 = genUniqueLabel("loop");
         string lbl2 = genUniqueLabel("endWhile");
 
-        labelUse(lbl1);
+        labelDef(lbl1);
         genTest(test, sp, ST);
         _beq(3, 0, lbl2); // check conditional
         genStatements(stmts, ST, sp, curProc);
         _beq(0, 0, lbl1); // loop back
-        labelUse(lbl2);
+        labelDef(lbl2);
 
         cmt("WHILE statement end");
     }
