@@ -1,17 +1,9 @@
 # To Do
-
-
-## old
-- test:
-  - build tree w/ types - done
-  - \# children is correct in nodes - done
-  - sym table type extraction + offset - done
-
 - maybe delete the params field in Procedure class
 - remove unused includes
 
 # Questions
-- how to evaluate expr in order priority if ()
+- how to evaluate expr in order priority of ()
 - will fp start from 0 work with procedures taking 0 args too
 
 # Plan

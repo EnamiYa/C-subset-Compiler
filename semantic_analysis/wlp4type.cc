@@ -137,7 +137,7 @@ int main()
     {
         printf("SOME NON CUSTOM EXCEPTION WAS THROWN\n");
         freeNodes(root);
-        return 0;
+        return 0; 
     }
     if (db)
     {
