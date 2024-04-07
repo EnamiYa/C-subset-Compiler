@@ -9,7 +9,7 @@
 using namespace std;
 
 bool dbCG = 0;
-bool a7CG = 1;
+bool a7CG = 0;
 bool _assert = 1;
 
 bool DID_IMPORT_PRINT = 0;
@@ -52,7 +52,7 @@ void loadVarIntoReg(const string &var, const string &curProc, const map<string, 
     _lw(reg, offset, 29);
 }
 
-void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg = 3)
+void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &curProc, const int &reg = 3)
 {
     if (n->isTerm)
         return;
@@ -60,13 +60,67 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg
     if (n->getLHS() == "factor")
     {
         auto rhs = n->getRHSVector().front();
-        if (rhs == NUM)
+
+        //* procedure call
+        if (n->rule == "factor ID LPAREN arglist RPAREN" || n->rule == "factor ID LPAREN RPAREN")
+        {
+            //? 1. preserve $29 and $31
+            push(29, sp);
+            push(31, sp);
+
+            //? 2. eval arglist expressions - push args to stack
+            if (n->rule == "factor ID LPAREN arglist RPAREN")
+            {
+                auto arglist = n->children[2];
+                // iterate over arglist
+                while (true)
+                {
+                    // arglist expr
+                    // arglist expr COMMA arglist
+                    assert(arglist->getLHS() == "arglist");
+
+                    auto expr = arglist->children[0];
+                    assert(expr->getLHS() == "expr");
+
+                    evalExpr(expr, sp, ST, curProc, reg);
+                    push(3, sp);
+
+                    if (arglist->rule == "arglist expr COMMA arglist")
+                    {
+                        arglist = arglist->children[2];
+                        continue;
+                    }
+                    break;
+                }
+            }
+
+            //? 3. make procedure call
+            auto id = n->children[0];
+            assert(id->kind == ID);
+
+            lis_word(5, id->lexeme);
+            _jalr(5);
+
+            //? 4. pop args
+            int argCount = ST.at(id->lexeme).params.size();
+
+            while (argCount-- > 0)
+            {
+                pop(31, sp);
+            }
+
+            //? 5. pop $29 and $31
+            pop(31, sp);
+            pop(29, sp);
+        }
+        else if (rhs == NUM)
         {
             auto numNode = n->children.front();
             assert(numNode->isTerm and numNode->kind == NUM);
 
             lis_word(3, stoi(numNode->lexeme));
             // todo fix to store if complex expression
+            return;
         }
         else if (rhs == ID)
         {
@@ -74,7 +128,8 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg
             assert(idNode->isTerm and idNode->kind == ID);
 
             auto name = n->children.front()->lexeme;
-            loadVarIntoReg(name, "wain", ST);
+            loadVarIntoReg(name, curProc, ST);
+            return;
             // todo fix to store if complex expression
         }
         else if (n->rule == "factor LPAREN expr RPAREN")
@@ -83,14 +138,14 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg
             auto exprNode = n->children[1];
             assert(exprNode->getLHS() == "expr");
 
-            evalExpr(exprNode, sp, ST, reg);
+            evalExpr(exprNode, sp, ST, curProc, reg);
         }
     }
     else if (n->rule == "expr expr PLUS term" || n->rule == "expr expr MINUS term")
     {
-        evalExpr(n->children[0], sp, ST, reg);
+        evalExpr(n->children[0], sp, ST, curProc, reg);
         push(3, sp);
-        evalExpr(n->children[2], sp, ST, reg);
+        evalExpr(n->children[2], sp, ST, curProc, reg);
         pop(5, sp);
         if (string rl = n->rule; rl.find("PLUS") != string::npos)
         {
@@ -108,15 +163,15 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg
         if (n->rule == "term factor")
         {
             assert(n->children[0]->getLHS() == "factor");
-            evalExpr(n->children[0], sp, ST, reg);
+            evalExpr(n->children[0], sp, ST, curProc, reg);
         }
 
         //* term -> term (STAR|SLASH|PCT) factor
         else if (n->children[0]->getLHS() == "term" and n->children[2]->getLHS() == "factor")
         {
-            evalExpr(n->children[0], sp, ST, reg);
+            evalExpr(n->children[0], sp, ST, curProc, reg);
             push(3, sp);
-            evalExpr(n->children[2], sp, ST, reg);
+            evalExpr(n->children[2], sp, ST, curProc, reg);
             pop(5, sp);
 
             auto op = n->children[1];
@@ -148,7 +203,7 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg
     {
         for (const auto &c : n->children)
         {
-            evalExpr(c, sp, ST, reg);
+            evalExpr(c, sp, ST, curProc, reg);
         }
     }
 } // end of evalExpr
@@ -173,7 +228,7 @@ void genDcls(Node *c, const map<string, Procedure> &ST, int &sp)
         assert(num->isTerm and num->kind == NUM);
 
         //? MAIN LOGIC
-        cmt("push dcl to stack"); //! warning: does this work
+        cmt("push dcl to stack");        //! warning: does this work
         lis_word(13, stoi(num->lexeme)); // store constant in temp
         push(13, sp);                    // push result to stack
 
@@ -220,7 +275,7 @@ string getLvalueIDLexeme(Node *n)
     return "";
 }
 
-void genTest(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg = 3)
+void genTest(Node *n, int &sp, const map<string, Procedure> &ST, const string &curProc, const int &reg = 3)
 {
     assert(n->getLHS() == "test");
 
@@ -231,9 +286,9 @@ void genTest(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg 
 
     //? MAIN LOGICS
     cmt("test starts");
-    evalExpr(expr1, sp, ST, reg);
+    evalExpr(expr1, sp, ST, curProc, reg);
     push(3, sp);
-    evalExpr(expr2, sp, ST, reg);
+    evalExpr(expr2, sp, ST, curProc, reg);
     pop(5, sp);
 
     auto comp = n->children[1]->kind;
@@ -310,7 +365,7 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
 
         //? MAIN LOGIC
         printf("; %s assignment\n", name.c_str());
-        evalExpr(expr, sp, ST);
+        evalExpr(expr, sp, ST, curProc);
         _sw(3, ST.at(curProc).getOffset(name), 29);
     }
 
@@ -326,7 +381,7 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
         string lbl1 = genUniqueLabel("else");
         string lbl2 = genUniqueLabel("endif");
 
-        genTest(test, sp, ST);
+        genTest(test, sp, ST, curProc);
         _beq(3, 0, lbl1);
         genStatements(stmts1, ST, sp, curProc); //* recurse
         _beq(0, 0, lbl2);
@@ -347,7 +402,7 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
         string lbl2 = genUniqueLabel("endWhile");
 
         labelDef(lbl1);
-        genTest(test, sp, ST);
+        genTest(test, sp, ST, curProc);
         _beq(3, 0, lbl2); // check conditional
         genStatements(stmts, ST, sp, curProc);
         _beq(0, 0, lbl1); // loop back
@@ -368,7 +423,7 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
 
         cmt("PRINTLN start");
         push(1, sp);
-        evalExpr(expr, sp, ST);
+        evalExpr(expr, sp, ST, curProc);
         _add(1, 3, 0); // pass expr value to print in $1
         push(31, sp);
         lis_word(5, "print");
@@ -451,7 +506,7 @@ void genProc(Node *n, const map<string, Procedure> &ST, int &sp, bool wainFirst)
             else if (c->getLHS() == "expr")
             {
                 cmt("wain return");
-                evalExpr(c, sp, ST); //* stores result in $3
+                evalExpr(c, sp, ST, "wain"); //* stores result in $3
                 return;
             }
         }
@@ -487,7 +542,7 @@ void genProc(Node *n, const map<string, Procedure> &ST, int &sp, bool wainFirst)
         //? 6. return expr
         auto retexpr = n->children[9];
         assert(retexpr->getLHS() == "expr");
-        evalExpr(retexpr, sp, ST);
+        evalExpr(retexpr, sp, ST, id->lexeme);
 
         genEpilogue(sp, ST, id->lexeme);
     }
@@ -506,7 +561,7 @@ void genCode(Node *n, const map<string, Procedure> &ST, int &sp)
     // int oldSP = sp;
     genProc(n, ST, sp, true); // wain first
     genEpilogue(sp, ST, "wain");
-    genProc(n, ST, sp, false);       // not wain procedures
+    genProc(n, ST, sp, false); // not wain procedures
     // printf("old sp = %d\n updated sp = %d\n", oldSP, sp);
     // assert(oldSP == sp); //* wain $1 and $2 left in stack
 }
