@@ -163,7 +163,7 @@ TYPES_WLP4 evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const st
             assert(fac->getLHS() == "factor");
 
             auto t = evalExpr(fac, sp, ST, curProc); // get address
-            assert(t == TYPES_WLP4::PTR);
+            // assert(t == TYPES_WLP4::PTR);
 
             _lw(3, 0, 3);
             return TYPES_WLP4::INT;
@@ -214,19 +214,34 @@ TYPES_WLP4 evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const st
             }
         }
     }
+    else if (n->rule == "expr term")
+    {
+        return evalExpr(n->children[0], sp, ST, curProc);
+    }
     else if (n->rule == "expr expr PLUS term" || n->rule == "expr expr MINUS term")
     {
         auto t1 = evalExpr(n->children[0], sp, ST, curProc, reg); // expr2
+        // printf("expr2 type is: %s\n", typeToStrr(t1).c_str());
+
         auto t2 = evalExpr(n->children[2], sp, ST, curProc, reg); // term - stored in 3
-        printf("t1 = %s - t2 = %s\n", typeToStrr(t1).c_str(), typeToStrr(t2).c_str());
+        // printf("t1 = %s - t2 = %s\n", typeToStrr(t1).c_str(), typeToStrr(t2).c_str());
 
         // todo test - wrote when tired
-        auto ptrSum = [&]()
+        auto ptrSum = [&](bool isSum = true)
         {
             _mult(3, 4); // mult int expr by 4
             _mflo(3);
             pop(5, sp);
-            _add(3, 5, 3);
+            if (isSum)
+            {
+                cmt("sum");
+                _add(3, 5, 3);
+            }
+            else
+            {
+                cmt("sub");
+                _sub(3, 5, 3);
+            }
         };
 
         if (t1 == TYPES_WLP4::PTR and t2 == TYPES_WLP4::PTR)
@@ -241,31 +256,35 @@ TYPES_WLP4 evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const st
             _sub(3, 5, 3);
             _div(3, 4);
             _mflo(3);
+            return TYPES_WLP4::INT;
         }
 
         else if (t1 == TYPES_WLP4::PTR)
         {
-            cmt("ptr + int");
-            assert(n->rule == "expr expr PLUS term");
-
+            cmt("ptr +/- int");
             evalExpr(n->children[0], sp, ST, curProc, reg);
             push(3, sp);
             evalExpr(n->children[2], sp, ST, curProc, reg); // stored in 3
-            ptrSum();
+            ptrSum(n->rule == "expr expr PLUS term");
+
+            return TYPES_WLP4::PTR;
         }
 
         else if (t2 == TYPES_WLP4::PTR)
         {
-            cmt("int + ptr");
-            assert(n->rule == "expr expr PLUS term");
-
+            cmt("ptr +/- int");
             evalExpr(n->children[2], sp, ST, curProc, reg);
             push(3, sp);
             evalExpr(n->children[0], sp, ST, curProc, reg); // stored in 3
-            ptrSum();
+            ptrSum(n->rule == "expr expr PLUS term");
+
+            return TYPES_WLP4::PTR;
         }
         else
         {
+            evalExpr(n->children[0], sp, ST, curProc, reg); // expr2
+            push(3, sp);
+            evalExpr(n->children[2], sp, ST, curProc, reg); // term - stored in 3
             pop(5, sp);
 
             if (string rl = n->rule; rl.find("PLUS") != string::npos)
@@ -278,6 +297,7 @@ TYPES_WLP4 evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const st
                 cmt("subtraction");
                 _sub(3, 5, 3);
             }
+            return TYPES_WLP4::INT;
         }
     }
     else if (n->getLHS() == "term")
@@ -449,47 +469,95 @@ void genTest(Node *n, int &sp, const map<string, Procedure> &ST, const string &c
 
     //? MAIN LOGICS
     cmt("test starts");
-    evalExpr(expr1, sp, ST, curProc, reg);
+    auto t1 = evalExpr(expr1, sp, ST, curProc, reg);
     push(3, sp);
-    evalExpr(expr2, sp, ST, curProc, reg);
+    auto t2 = evalExpr(expr2, sp, ST, curProc, reg);
     pop(5, sp);
+
+    bool isPtr = t1 == TYPES_WLP4::PTR;
+    assert(t1 != TYPES_WLP4::NA and t2 != TYPES_WLP4::NA and t1 == t2);
 
     auto comp = n->children[1]->kind;
     if (comp == LT)
     {
         cmt("test LT");
-        _slt(3, 5, 3);
+        if (isPtr)
+        {
+            _sltu(3, 5, 3);
+        }
+        else
+        {
+            _slt(3, 5, 3);
+        }
     }
     else if (comp == GT)
     {
         cmt("test GT");
-        _slt(3, 3, 5);
+        if (isPtr)
+        {
+            _sltu(3, 3, 5);
+        }
+        else
+        {
+            _slt(3, 3, 5);
+        }
     }
     else if (comp == NE)
     {
         cmt("test NE");
-        _slt(6, 5, 3);
-        _slt(7, 3, 5);
+        if (isPtr)
+        {
+            _sltu(6, 5, 3);
+            _sltu(7, 3, 5);
+        }
+        else
+        {
+            _slt(6, 5, 3);
+            _slt(7, 3, 5);
+        }
         _add(3, 6, 7);
     }
     else if (comp == EQ)
     {
         cmt("test EQ");
-        _slt(6, 5, 3);
-        _slt(7, 3, 5);
+        if (isPtr)
+        {
+            _sltu(6, 5, 3);
+            _sltu(7, 3, 5);
+        }
+        else
+        {
+            _slt(6, 5, 3);
+            _slt(7, 3, 5);
+        }
+
         _add(3, 6, 7);
         _sub(3, 11, 3);
     }
     else if (comp == LE)
     {
         cmt("test LE");
-        _slt(3, 3, 5);
+        if (isPtr)
+        {
+            _sltu(3, 3, 5);
+        }
+        else
+        {
+            _slt(3, 3, 5);
+        }
         _sub(3, 11, 3);
     }
     else if (comp == GE)
     {
         cmt("test GE");
-        _slt(3, 5, 3);
+        if (isPtr)
+        {
+            _sltu(3, 5, 3);
+        }
+        else
+        {
+            _slt(3, 5, 3);
+        }
         _sub(3, 11, 3);
     }
     else

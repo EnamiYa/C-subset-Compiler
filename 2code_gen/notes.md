@@ -1,5 +1,5 @@
 # To Do
-- debug ptr arithmetic
+- remove all asserts when done
 
 ## maybe to dos
 - maybe delete the params field in Procedure class
