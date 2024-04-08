@@ -11,7 +11,7 @@ using namespace std;
 bool db = 0;
 bool pTree = 0;
 bool pChildren = 0;
-bool pST = 0;
+bool pST = 1;
 
 bool isProc(Node *n, const map<string, Procedure> &ST, string curProc)
 {

@@ -18,6 +18,15 @@ int ENDIF_LABEL_COUNTER = 0;
 int LOOP_LABEL_COUNTER = 0;
 int ENDWHILE_LABEL_COUNTER = 0;
 
+string typeToStrr(TYPES_WLP4 t)
+{
+    if (t == TYPES_WLP4::INT)
+        return "INT";
+    if (t == TYPES_WLP4::PTR)
+        return "INT STAR";
+    return "NO TYPE";
+}
+
 // todo A8 improve w/ procedure labels
 string genUniqueLabel(const string &s)
 {
@@ -52,10 +61,10 @@ void loadVarIntoReg(const string &var, const string &curProc, const map<string, 
 }
 
 //* returns address of lvalue, else if NOT lvalue returns value of expr
-void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &curProc, const int &reg = 3)
+TYPES_WLP4 evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &curProc, const int &reg = 3, TYPES_WLP4 t = TYPES_WLP4::NA)
 {
     if (n->isTerm)
-        return;
+        return curProc == "" ? TYPES_WLP4::NA : ST.at(curProc).vars.at(n->lexeme).first;
 
     if (n->getLHS() == "factor")
     {
@@ -112,6 +121,8 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &
             //? 5. pop $29 and $31
             pop(31, sp);
             pop(29, sp);
+
+            return TYPES_WLP4::INT;
         }
         else if (rhs == NUM)
         {
@@ -119,8 +130,8 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &
             assert(numNode->isTerm and numNode->kind == NUM);
 
             lis_word(3, stoi(numNode->lexeme));
-            // todo fix to store if complex expression
-            return;
+
+            return TYPES_WLP4::INT;
         }
         else if (rhs == ID)
         {
@@ -129,13 +140,13 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &
 
             auto name = n->children.front()->lexeme;
             loadVarIntoReg(name, curProc, ST);
-            return;
-            // todo fix to store if complex expression
+
+            return curProc == "" ? TYPES_WLP4::NA : ST.at(curProc).vars.at(name).first;
         }
         else if (rhs == NULL_STR)
         {
             _add(3, 0, 11);
-            return;
+            return TYPES_WLP4::PTR;
         }
         else if (n->rule == "factor LPAREN expr RPAREN")
         {
@@ -143,7 +154,7 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &
             auto exprNode = n->children[1];
             assert(exprNode->getLHS() == "expr");
 
-            evalExpr(exprNode, sp, ST, curProc, reg);
+            return evalExpr(exprNode, sp, ST, curProc, reg);
         }
         //* dereference pointers
         else if (n->rule == "factor STAR factor")
@@ -151,8 +162,11 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &
             auto fac = n->children[1];
             assert(fac->getLHS() == "factor");
 
-            evalExpr(fac, sp, ST, curProc); // get address
+            auto t = evalExpr(fac, sp, ST, curProc); // get address
+            assert(t == TYPES_WLP4::PTR);
+
             _lw(3, 0, 3);
+            return TYPES_WLP4::INT;
         }
         //* take the address-of
         else if (n->rule == "factor AMP lvalue")
@@ -178,14 +192,18 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &
                     int offset = ST.at(curProc).getOffset(id->lexeme);
                     lis_word(3, offset);
                     _add(3, 3, 29); // $3 will have address of lvalue
-                    return;
+                    return TYPES_WLP4::PTR;
                 }
 
                 else if (lvalue->rule == "lvalue STAR factor")
                 {
                     auto fac = lvalue->children[1];
                     assert(fac->getLHS() == "factor");
-                    evalExpr(fac, sp, ST, curProc);
+
+                    auto t = evalExpr(fac, sp, ST, curProc);
+
+                    assert(t == TYPES_WLP4::PTR);
+                    return TYPES_WLP4::INT;
                 }
 
                 else
@@ -198,19 +216,68 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &
     }
     else if (n->rule == "expr expr PLUS term" || n->rule == "expr expr MINUS term")
     {
-        evalExpr(n->children[0], sp, ST, curProc, reg);
-        push(3, sp);
-        evalExpr(n->children[2], sp, ST, curProc, reg);
-        pop(5, sp);
-        if (string rl = n->rule; rl.find("PLUS") != string::npos)
+        auto t1 = evalExpr(n->children[0], sp, ST, curProc, reg); // expr2
+        auto t2 = evalExpr(n->children[2], sp, ST, curProc, reg); // term - stored in 3
+        printf("t1 = %s - t2 = %s\n", typeToStrr(t1).c_str(), typeToStrr(t2).c_str());
+
+        // todo test - wrote when tired
+        auto ptrSum = [&]()
         {
-            cmt("addition");
+            _mult(3, 4); // mult int expr by 4
+            _mflo(3);
+            pop(5, sp);
             _add(3, 5, 3);
+        };
+
+        if (t1 == TYPES_WLP4::PTR and t2 == TYPES_WLP4::PTR)
+        {
+            cmt("ptr - ptr");
+            assert(n->rule == "expr expr MINUS term");
+
+            evalExpr(n->children[0], sp, ST, curProc, reg);
+            push(3, sp);
+            evalExpr(n->children[2], sp, ST, curProc, reg);
+            pop(5, sp); // $5 -> expr2
+            _sub(3, 5, 3);
+            _div(3, 4);
+            _mflo(3);
+        }
+
+        else if (t1 == TYPES_WLP4::PTR)
+        {
+            cmt("ptr + int");
+            assert(n->rule == "expr expr PLUS term");
+
+            evalExpr(n->children[0], sp, ST, curProc, reg);
+            push(3, sp);
+            evalExpr(n->children[2], sp, ST, curProc, reg); // stored in 3
+            ptrSum();
+        }
+
+        else if (t2 == TYPES_WLP4::PTR)
+        {
+            cmt("int + ptr");
+            assert(n->rule == "expr expr PLUS term");
+
+            evalExpr(n->children[2], sp, ST, curProc, reg);
+            push(3, sp);
+            evalExpr(n->children[0], sp, ST, curProc, reg); // stored in 3
+            ptrSum();
         }
         else
         {
-            cmt("subtraction");
-            _sub(3, 5, 3);
+            pop(5, sp);
+
+            if (string rl = n->rule; rl.find("PLUS") != string::npos)
+            {
+                cmt("addition");
+                _add(3, 5, 3);
+            }
+            else
+            {
+                cmt("subtraction");
+                _sub(3, 5, 3);
+            }
         }
     }
     else if (n->getLHS() == "term")
@@ -218,7 +285,7 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &
         if (n->rule == "term factor")
         {
             assert(n->children[0]->getLHS() == "factor");
-            evalExpr(n->children[0], sp, ST, curProc, reg);
+            return evalExpr(n->children[0], sp, ST, curProc, reg);
         }
 
         //* term -> term (STAR|SLASH|PCT) factor
@@ -253,6 +320,7 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &
                 assert(false and "operation MUST be one of (STAR|SLASH|PCT)\n");
             }
         }
+        return TYPES_WLP4::INT;
     }
     //* just for assignment
     else if (n->getLHS() == "lvalue")
@@ -266,6 +334,7 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &
             int offset = ST.at(curProc).getOffset(id->lexeme);
             lis_word(3, offset);
             _add(3, 3, 29);
+            return curProc == "" ? TYPES_WLP4::NA : ST.at(curProc).vars.at(n->lexeme).first;
         }
         //* statement → lvalue BECOMES expr SEMI
         //* lvalue → lvalue STAR factor
@@ -274,14 +343,16 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &
             auto fac = n->children[1];
             assert(fac->getLHS() == "factor");
 
-            evalExpr(fac, sp, ST, curProc); // get factor address - we know it must be ptr
+            auto t = evalExpr(fac, sp, ST, curProc); // get factor address - we know it must be ptr
+            assert(t == TYPES_WLP4::PTR);
+            return TYPES_WLP4::INT;
         }
 
         else if (n->rule == "lvalue LPAREN lvalue RPAREN")
         {
             auto lvalue = n->children[1];
             assert(lvalue->getLHS() == "lvalue");
-            evalExpr(lvalue, sp, ST, curProc);
+            return evalExpr(lvalue, sp, ST, curProc);
         }
 
         else
@@ -296,6 +367,7 @@ void evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const string &
             evalExpr(c, sp, ST, curProc, reg);
         }
     }
+    return TYPES_WLP4::NA;
 } // end of evalExpr
 
 void genDcls(Node *c, const map<string, Procedure> &ST, int &sp)
@@ -338,8 +410,8 @@ void genDcls(Node *c, const map<string, Procedure> &ST, int &sp)
         assert(_null->kind == NULL_STR);
 
         cmt("push dcl to stack");
-        _add(13, 0, 11);
-        push(13, sp);
+        _add(3, 0, 11);
+        push(3, sp);
     }
     else
     {
@@ -471,7 +543,6 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
             //? MAIN LOGIC
             evalExpr(expr, sp, ST, curProc);
             push(3, sp);
-            cmt("get address of factor");
             evalExpr(lvalue, sp, ST, curProc);
             pop(5, sp);
             _sw(5, 0, 3);
@@ -598,7 +669,9 @@ void genProc(Node *n, const map<string, Procedure> &ST, int &sp, bool wainFirst)
     else if (wainFirst and n->getLHS() == "main")
     {
         //? 1. setup frame pointer
-        _sub(29, 30, 4);
+        //! UPDATED
+        lis_word(12, 12);
+        _sub(29, 30, 12);
 
         //? 2. push params to stack
         push(1, sp);

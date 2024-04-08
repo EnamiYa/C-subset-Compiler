@@ -1,7 +1,5 @@
 # To Do
-- assign with lvalue ptr or not
-- does not matter, get lvalue from evalexpr
-- evalexpr with lvalue returns either 
+- debug ptr arithmetic
 
 ## maybe to dos
 - maybe delete the params field in Procedure class

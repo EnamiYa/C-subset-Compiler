@@ -4,6 +4,7 @@
 #include <vector>
 #include <utility>
 #include <map>
+#include <unordered_map>
 #include <string>
 #include "Node.h"
 
@@ -11,8 +12,10 @@ using namespace std;
 
 struct Procedure
 {
+    vector<string> pSyms;
     vector<TYPES_WLP4> params;
-    map<string, pair<TYPES_WLP4, int>> vars; // map to know that 1st params.size are the params
+    unordered_map<string, pair<TYPES_WLP4, int>> vars; // map to know that 1st params.size are the params
+    vector<string> varSyms;
     int getOffset(const string &var) const
     {
         return vars.at(var).second;
@@ -33,7 +36,7 @@ void debugST(const map<string, Procedure> &ST)
     printf("_________________\n");
     for (const auto &[proc, localST] : ST)
     {
-        map<string, pair<TYPES_WLP4, int>> vars = localST.vars;
+        unordered_map<string, pair<TYPES_WLP4, int>> vars = localST.vars;
 
         printf("Procedure %s has local ST: \n", proc.c_str());
         for (const auto &[s, p] : vars)
@@ -45,7 +48,7 @@ void debugST(const map<string, Procedure> &ST)
 }
 
 // todo test
-void getVars(Node *n, map<string, pair<TYPES_WLP4, int>> &vars, vector<TYPES_WLP4> &params, int &fp, bool p)
+void getVars(Node *n, unordered_map<string, pair<TYPES_WLP4, int>> &vars, vector<TYPES_WLP4> &params, vector<string>& pSyms, vector<string> &varSyms, bool p)
 {
     assert(n && "must not be nullptr\n");
 
@@ -60,17 +63,21 @@ void getVars(Node *n, map<string, pair<TYPES_WLP4, int>> &vars, vector<TYPES_WLP
         if (p)
         {
             params.push_back(type);
+            pSyms.push_back(name);
+            vars[name] = make_pair(type, -1);
         }
-
-        vars[name] = make_pair(type, fp);
-        fp -= 4;
+        else
+        {
+            varSyms.push_back(name);
+            vars[name] = make_pair(type, -1);
+        }
     }
 
     else
     {
         for (const auto &c : n->children)
         {
-            getVars(c, vars, params, fp, p);
+            getVars(c, vars, params, pSyms, varSyms, p);
         }
     }
 }
@@ -79,11 +86,11 @@ Procedure getLocalST(Node *n)
 {
     assert(n && "must be procedure or main\n");
 
-    int fp = 0;
-
     // 4. add vars
+    vector<string> pSym;
     vector<TYPES_WLP4> pms;
-    map<string, pair<TYPES_WLP4, int>> vars; // map to know that 1st params.size are the params
+    unordered_map<string, pair<TYPES_WLP4, int>> vars; // map to know that 1st params.size are the params
+    vector<string> varSym;
 
     for (const auto &child : n->children)
     {
@@ -95,10 +102,30 @@ Procedure getLocalST(Node *n)
 
         if (string lhs = child->getLHS(); lhs == "dcls" || lhs == "params" || lhs == "dcl")
         {
-            getVars(child, vars, pms, fp, (lhs == "params" || lhs == "dcl"));
+            getVars(child, vars, pms, pSym, varSym, (lhs == "params" || lhs == "dcl"));
         }
     }
-    return Procedure{pms, vars};
+
+    //? fill in offsets
+    int pCount = pSym.size();
+
+    int i = 1;
+    //? 1. args
+    while (i <= pCount)
+    {
+        vars.at(pSym[i - 1]).second = 4 * (pCount - i + 1);
+        ++i;
+    }
+
+    //? 2. vars
+    int varCount = varSym.size();
+    i = 1;
+    while (i <= varCount) {
+        vars.at(varSym[i - 1]).second = -4 * (i - 1);
+        ++i;
+    }
+
+    return Procedure{pSym, pms, vars, varSym};
 }
 
 //* find procedures subtrees
