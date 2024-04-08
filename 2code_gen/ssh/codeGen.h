@@ -306,6 +306,7 @@ void genDcls(Node *c, const map<string, Procedure> &ST, int &sp)
     if (c->rule == "dcls .EMPTY")
         return;
 
+    //! which order to push dcls to match symbol table offsets
     if (c->rule == "dcls dcls dcl BECOMES NUM SEMI")
     {
         genDcls(c->children.front(), ST, sp); // dcls
@@ -338,8 +339,8 @@ void genDcls(Node *c, const map<string, Procedure> &ST, int &sp)
         assert(_null->kind == NULL_STR);
 
         cmt("push dcl to stack");
-        _add(13, 0, 11);
-        push(13, sp);
+        _add(3, 0, 11);
+        push(3, sp);
     }
     else
     {
@@ -471,7 +472,6 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
             //? MAIN LOGIC
             evalExpr(expr, sp, ST, curProc);
             push(3, sp);
-            cmt("get address of factor");
             evalExpr(lvalue, sp, ST, curProc);
             pop(5, sp);
             _sw(5, 0, 3);
@@ -557,27 +557,25 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
 void genEpilogue(int &sp, const map<string, Procedure> &ST, const string &proc)
 {
     int varCount = ST.at(proc).vars.size() - ST.at(proc).params.size();
+    // printf("PROCEDURE %s VAR COUNT = %d\n", proc.c_str(), varCount);
+    // printf("PROCEDURE %s: LOCAL VAR COUNT = %lu - PARAMS COUNT: %lu\n", proc.c_str(), ST.at(proc).vars.size(), ST.at(proc).params.size());
 
     printf("; begin %s epilogue__________________\n", proc.c_str());
-    if (proc == "wain")
-    {
-        _jr(31);
-        return;
-    }
-    else
+    if (proc != "wain")
     {
         //? pop registers
-        pop(7, sp); // 7
-        pop(6, sp); // 6
-        pop(5, sp); // 5
-
-        //? pop local vars
-        while (varCount-- > 0)
-        {
-            pop(15, sp);
-        }
-        _jr(31);
+        pop(31, sp); // 7
+        pop(31, sp); // 6
+        pop(31, sp); // 5
     }
+
+    //? pop local vars
+    while (varCount-- > 0)
+    {
+        pop(31, sp);
+    }
+
+    _jr(31);
 }
 
 //* prologue + body
