@@ -56,6 +56,11 @@ struct Node
         assert(!isTerm && "must be non terminal");
         return strToPairRule(rule).second;
     }
+    string getProcLexeme()
+    {
+        assert(isTerm and kind == ID);
+        return "PROCEDURE0" + lexeme + "0PROCEDURE";
+    }
 };
 
 Node *buildNode(const string &s)
@@ -78,8 +83,10 @@ Node *buildNode(const string &s)
         istringstream iss{s};
         string rl = "";
 
-        iss >> tmp; rl = rl + tmp;
-        while (iss >> tmp and tmp != ":") {
+        iss >> tmp;
+        rl = rl + tmp;
+        while (iss >> tmp and tmp != ":")
+        {
             rl = rl + " " + tmp;
         }
         ans = new Node{rl};

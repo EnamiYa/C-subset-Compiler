@@ -177,7 +177,7 @@ void _bne(const int &s, const int &t, const int &i)
         assert(s >= 0 and s <= 31);
         assert(t >= 0 and t <= 31);
     }
-    printf("bne $%d, $%d, $%d\n", s, t, i);
+    printf("bne $%d, $%d, %d\n", s, t, i);
 }
 
 void _bne(const int &s, const int &t, const string &label)

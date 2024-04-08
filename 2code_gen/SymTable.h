@@ -48,7 +48,7 @@ void debugST(const map<string, Procedure> &ST)
 }
 
 // todo test
-void getVars(Node *n, unordered_map<string, pair<TYPES_WLP4, int>> &vars, vector<TYPES_WLP4> &params, vector<string>& pSyms, vector<string> &varSyms, bool p)
+void getVars(Node *n, unordered_map<string, pair<TYPES_WLP4, int>> &vars, vector<TYPES_WLP4> &params, vector<string> &pSyms, vector<string> &varSyms, bool p)
 {
     assert(n && "must not be nullptr\n");
 
@@ -120,7 +120,8 @@ Procedure getLocalST(Node *n)
     //? 2. vars
     int varCount = varSym.size();
     i = 1;
-    while (i <= varCount) {
+    while (i <= varCount)
+    {
         vars.at(varSym[i - 1]).second = -4 * (i - 1);
         ++i;
     }
@@ -149,6 +150,12 @@ void getGlobalST(Node *root, map<string, Procedure> &symTable)
     else if (p.first == "main" || p.first == "procedure")
     {
         string name = root->children[1]->lexeme;
+
+        if (p.first != "main")
+        {
+            name = "PROCEDURE0" + root->children[1]->lexeme + "0PROCEDURE";
+        }
+
         symTable[name] = getLocalST(root);
     }
     else

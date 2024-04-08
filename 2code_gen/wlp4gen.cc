@@ -93,6 +93,7 @@ int main()
     map<string, Procedure> ST;
 
     getGlobalST(root, ST);
+
     if (db)
     {
         if (pTree)

@@ -18,6 +18,8 @@ int ENDIF_LABEL_COUNTER = 0;
 int LOOP_LABEL_COUNTER = 0;
 int ENDWHILE_LABEL_COUNTER = 0;
 
+int SKIP_DEL_COUNTER = 0;
+
 string typeToStrr(TYPES_WLP4 t)
 {
     if (t == TYPES_WLP4::INT)
@@ -47,9 +49,13 @@ string genUniqueLabel(const string &s)
     {
         ans = s + to_string(ENDWHILE_LABEL_COUNTER++);
     }
+    else if (s == "d")
+    {
+        ans = "skipDelete" + to_string(SKIP_DEL_COUNTER++);
+    }
     else
     {
-        assert(!a7CG and "YOU MAY HAVE MISSPELLED LABEL NAME!");
+        assert(false);
     }
     return ans;
 }
@@ -71,7 +77,21 @@ TYPES_WLP4 evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const st
         auto rhs = n->getRHSVector().front();
 
         //* procedure call
-        if (n->rule == "factor ID LPAREN arglist RPAREN" || n->rule == "factor ID LPAREN RPAREN")
+        if (n->rule == "factor NEW INT LBRACK expr RBRACK")
+        {
+            auto expr = n->children[3];
+            assert(expr->getLHS() == "expr");
+
+            evalExpr(expr, sp, ST, curProc);
+            _add(1, 3, 0);
+            push(31, sp);
+            lis_word(5, "new");
+            _jalr(5);
+            pop(31, sp);
+            _bne(3, 0, 1);
+            _add(3, 11, 0);
+        }
+        else if (n->rule == "factor ID LPAREN arglist RPAREN" || n->rule == "factor ID LPAREN RPAREN")
         {
             //? 1. preserve $29 and $31
             push(29, sp);
@@ -107,11 +127,12 @@ TYPES_WLP4 evalExpr(Node *n, int &sp, const map<string, Procedure> &ST, const st
             auto id = n->children[0];
             assert(id->kind == ID);
 
-            lis_word(5, id->lexeme);
+            auto procLabel = id->getProcLexeme();
+            lis_word(5, procLabel);
             _jalr(5);
 
             //? 4. pop args
-            int argCount = ST.at(id->lexeme).params.size();
+            int argCount = ST.at(procLabel).params.size();
 
             while (argCount-- > 0)
             {
@@ -691,6 +712,21 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
         pop(1, sp);
         cmt("PRINTLN end");
     }
+    else if (n->rule == "statement DELETE LBRACK RBRACK expr SEMI")
+    {
+        auto expr = n->children[3];
+        assert(expr->getLHS() == "expr");
+        auto label = genUniqueLabel("d");
+
+        evalExpr(expr, sp, ST, curProc);
+        _beq(3, 11, label); // skip if expr is NULL
+        _add(1, 3, 0);      // pass arg to delete in $1
+        push(31, sp);
+        lis_word(5, "delete");
+        _jalr(5);
+        pop(31, sp);
+        labelDef(label);
+    }
 } // end of genStatements
 
 void genEpilogue(int &sp, const map<string, Procedure> &ST, const string &proc)
@@ -736,14 +772,39 @@ void genProc(Node *n, const map<string, Procedure> &ST, int &sp, bool wainFirst)
     // main → INT WAIN LPAREN dcl COMMA dcl RPAREN LBRACE dcls statements RETURN expr SEMI RBRACE
     else if (wainFirst and n->getLHS() == "main")
     {
+        printf(".import init\n");
+        printf(".import new\n");
+        printf(".import delete\n");
+
+        printf("; wain prologue\n");
+
+        lis_word(4, 4);
+        lis_word(11, 1);
+
         //? 1. setup frame pointer
-        //! UPDATED
         lis_word(12, 12);
         _sub(29, 30, 12);
 
         //? 2. push params to stack
         push(1, sp);
         push(2, sp);
+
+        //? 3. call init
+        auto dcl1 = n->children[3];
+        assert(dcl1->getLHS() == "dcl");
+        auto t = dcl1->children.front();
+        assert(t->rule == "type INT" || t->rule == "type INT STAR");
+
+        //* setup init arg in $2
+        if (t->rule == "type INT")
+        {
+            _add(2, 0, 0);
+        }
+
+        push(31, sp);
+        lis_word(5, "init");
+        _jalr(5);
+        pop(31, sp);
 
         for (const auto &c : n->children)
         {
@@ -778,7 +839,8 @@ void genProc(Node *n, const map<string, Procedure> &ST, int &sp, bool wainFirst)
         //? 1. label name
         auto id = n->children[1];
         assert(id->kind == ID);
-        labelDef(id->lexeme);
+        auto procLabel = id->getProcLexeme();
+        labelDef(procLabel);
 
         //? 2. setup frame pointer: 1st element pushed to stack frame
         _sub(29, 30, 4);
@@ -797,14 +859,14 @@ void genProc(Node *n, const map<string, Procedure> &ST, int &sp, bool wainFirst)
         printf("; end prologue__________________\n");
         auto stmts = n->children[7];
         assert(stmts->getLHS() == "statements");
-        genStatements(stmts, ST, sp, id->lexeme);
+        genStatements(stmts, ST, sp, procLabel);
 
         //? 6. return expr
         auto retexpr = n->children[9];
         assert(retexpr->getLHS() == "expr");
-        evalExpr(retexpr, sp, ST, id->lexeme);
+        evalExpr(retexpr, sp, ST, procLabel);
 
-        genEpilogue(sp, ST, id->lexeme);
+        genEpilogue(sp, ST, procLabel);
     }
     else
     {
@@ -814,16 +876,9 @@ void genProc(Node *n, const map<string, Procedure> &ST, int &sp, bool wainFirst)
 
 void genCode(Node *n, const map<string, Procedure> &ST, int &sp)
 {
-    printf("; wain prologue\n");
-    lis_word(4, 4);
-    lis_word(11, 1);
-    // todo add wain init and stuff
-    // int oldSP = sp;
     genProc(n, ST, sp, true); // wain first
     genEpilogue(sp, ST, "wain");
     genProc(n, ST, sp, false); // not wain procedures
-    // printf("old sp = %d\n updated sp = %d\n", oldSP, sp);
-    // assert(oldSP == sp); //* wain $1 and $2 left in stack
 }
 
 #endif
