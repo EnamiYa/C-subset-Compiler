@@ -1,7 +1,4 @@
 # To Do
-- wherever I get procedure name from node directly, call getProcLexeme
-- if i get it from symTable it's fine
-
 - remove all asserts when done
 
 ## maybe to dos
