@@ -1,7 +1,0 @@
-int f(int c) { int d = 1; int boo = 12; return 2; }
-
-int g() { return 10; }
-
-int h(int e, int f) { return 12;}
-
-int wain(int a, int b) { return 3; }
