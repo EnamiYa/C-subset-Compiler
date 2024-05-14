@@ -281,7 +281,6 @@ void genTest(Node *n, int &sp, const map<string, Procedure> &ST, const int &reg 
     cmt("test ends");
 }
 
-// todo p3-4-5?
 void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const string &curProc)
 {
     if (n->isTerm || n->rule == "statements .EMPTY")
@@ -378,7 +377,6 @@ void genStatements(Node *n, const map<string, Procedure> &ST, int &sp, const str
     }
 }
 
-//! update: a8 w/ procedures
 void genPrologue(Node *n, const map<string, Procedure> &ST, int &sp)
 {
     if (n->isTerm)
