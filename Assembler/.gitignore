@@ -1,5 +1,5 @@
-*.dSYM*
+*.dSYM
 Notes.md
 scanner.h
 scanner.cc
-asm_cpp/*
+asm_cpp/

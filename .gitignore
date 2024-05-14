@@ -2,3 +2,6 @@
 **/asm_cpp
 **/old_approach
 *.zip
+.DS_Store
+*.dSYM
+

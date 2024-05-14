@@ -11,9 +11,6 @@ const unordered_set<string> INS = {".word", "add", "sub", "mult", "multu", "div"
 
 void outWord(const int &word);
 
-//! REMOVE
-unordered_map<string, int> getSymbolTable(const vector<Token> &v);
-
 bool isValidInsFormat(const vector<Token> &tokenLine);
 
 // auto createIns(vector<Token>& tokens);
